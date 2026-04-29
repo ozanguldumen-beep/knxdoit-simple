@@ -1,3 +1,3 @@
-# KNXdoit v6 Ready
+# KNXdoit v7
 
-Collapsible menu, improved room placement, Turkish PDF fixes, basic ABB-style KNX bus schematic.
+Right panel tabs, product quantity selector, restored products, and stricter energy connection rules.

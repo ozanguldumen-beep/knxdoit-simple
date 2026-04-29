@@ -28,12 +28,16 @@ DPT_RULES = {
     "knx_thermostat": [("Sıcaklık", "DPST-9-1"), ("Set Değeri", "DPST-9-1")],
     "knx_sensor": [("Hareket", "DPST-1-1"), ("Işık", "DPST-9-4")],
     "knx_thermo_switch": [("Sıcaklık", "DPST-9-1"), ("Buton", "DPST-1-1")],
+    "binary_input": [("Giriş 1", "DPST-1-1"), ("Giriş 2", "DPST-1-1")],
     "lamp": [("Aç/Kapa", "DPST-1-1"), ("Geri Bildirim", "DPST-1-1")],
     "dim_lamp": [("On/Off", "DPST-1-1"), ("Parlaklık", "DPST-5-1")],
     "blind": [("Up/Down", "DPST-1-8"), ("Stop", "DPST-1-7")],
     "valve": [("Aç/Kapa", "DPST-1-1")],
     "motor_valve": [("Motorlu Vana", "DPST-1-1")],
     "onoff": [("On/Off", "DPST-1-1")],
+    "aircon": [("Klima On/Off", "DPST-1-1")],
+    "boiler": [("Kombi On/Off", "DPST-1-1")],
+    "door": [("Kapı Kontrol", "DPST-1-1")],
 }
 
 @app.route("/")
@@ -72,67 +76,54 @@ def draw_device(c, x, y, label, icon=""):
     c.roundRect(x-24, y-18, 48, 36, 5, stroke=1, fill=1)
     c.setFillColor(colors.black)
     c.setFont(FONT_BOLD, 6)
-    txt = label[:18]
-    c.drawCentredString(x, y-28, txt)
-    c.setFont(FONT_NAME, 11)
+    c.drawCentredString(x, y-28, label[:18])
+    c.setFont(FONT_NAME, 10)
     c.drawCentredString(x, y-4, icon or "KNX")
 
 def draw_pdf_schematic(c, data, y_start):
     width, height = landscape(A4)
     c.setFont(FONT_BOLD, 14)
-    c.drawString(30, y_start, "1. ABB tarzı KNX Bus Şeması")
+    c.drawString(30, y_start, "1. KNX Bus Şeması")
     y = y_start - 35
-
-    floors = data.get("floors", [])
-    panels = data.get("panels", [])
-    collectors = data.get("collectors", [])
-
     bus_left = 85
     bus_right = width - 80
 
-    # Main line
-    c.setStrokeColor(colors.HexColor("#0f9d58"))
-    c.setLineWidth(3)
-
     rows = []
-    for f in floors:
-        devices = []
-        for r in f.get("rooms", []):
-            for d in r.get("devices", []):
-                if d.get("type", "").startswith("knx") or d.get("type") in ["ip_router", "power_supply", "line_coupler", "binary_input", "switch_actuator", "dimmer_actuator", "blind_actuator", "rgbw_actuator"]:
-                    devices.append((r.get("name","Oda"), d.get("name","Cihaz"), d.get("type","")))
-        rows.append((f.get("name","Kat"), devices))
-
+    panels = data.get("panels", [])
     if panels:
         pdev = []
         for p in panels:
             for d in p.get("devices", []):
                 pdev.append((p.get("name","Pano"), d.get("name","Modül"), d.get("type","")))
-        rows.insert(0, ("Pano / Ana Hat", pdev))
+        rows.append(("Pano / Ana Hat", pdev))
 
-    max_rows = min(len(rows), 4)
-    for idx in range(max_rows):
-        row_name, devs = rows[idx]
+    for f in data.get("floors", []):
+        devices = []
+        for r in f.get("rooms", []):
+            for d in r.get("devices", []):
+                typ = d.get("type", "")
+                if typ.startswith("knx") or typ in ["binary_input"]:
+                    devices.append((r.get("name","Oda"), d.get("name","Cihaz"), typ))
+        rows.append((f.get("name","Kat"), devices))
+
+    for idx, (row_name, devs) in enumerate(rows[:4]):
         row_y = y - idx * 88
         c.setStrokeColor(colors.HexColor("#0f9d58"))
+        c.setLineWidth(3)
         c.line(bus_left, row_y, bus_right, row_y)
         c.setFillColor(colors.HexColor("#0f9d58"))
         c.setFont(FONT_BOLD, 8)
         c.drawString(35, row_y-3, row_name)
         c.drawString(bus_left, row_y+8, "KNX BUS")
-
-        shown = devs[:8]
-        if not shown:
-            shown = [(row_name, "Boş hat", "")]
+        shown = devs[:8] or [(row_name, "Boş hat", "")]
         step = (bus_right - bus_left) / (len(shown)+1)
         for i, (_, name, typ) in enumerate(shown, start=1):
             x = bus_left + step*i
             c.setStrokeColor(colors.HexColor("#0f9d58"))
             c.line(x, row_y, x, row_y+38)
-            icon = "▣" if "switch" in typ else "T" if "thermostat" in typ else "S" if "sensor" in typ else "A" if "actuator" in typ else "P"
+            icon = "A" if "actuator" in typ else "T" if "thermostat" in typ else "S" if "sensor" in typ else "I" if "input" in typ else "K"
             draw_device(c, x, row_y+55, name, icon)
-
-    return y - max_rows * 88 - 10
+    return y - min(len(rows),4)*88 - 10
 
 @app.route("/api/pdf", methods=["POST"])
 def pdf():
@@ -165,7 +156,7 @@ def pdf():
     y -= 10
     c.setFont(FONT_NAME, 6.5)
 
-    for i, w in enumerate(wires[:28], start=1):
+    for i, w in enumerate(wires[:32], start=1):
         if y < 28:
             c.showPage()
             y = height-40
@@ -186,7 +177,7 @@ def pdf():
     c.drawString(30, 16, "Bu rapor saha elektrikçisi için hazırlanmıştır. KNX programlama/grup adresleri ayrıca kontrol edilmelidir.")
     c.save()
     buffer.seek(0)
-    return send_file(buffer, as_attachment=True, download_name="knxdoit_v5_1_elektrikci_semasi.pdf", mimetype="application/pdf")
+    return send_file(buffer, as_attachment=True, download_name="knxdoit_v7_elektrikci_semasi.pdf", mimetype="application/pdf")
 
 if __name__ == "__main__":
     app.run(debug=True)

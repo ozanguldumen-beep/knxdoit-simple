@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>KNXdoit v6 Ready</title>
+  <title>KNXdoit v7</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -23,36 +23,17 @@
 
     <details>
       <summary>▶ KNX Ürünler</summary>
-      <button onclick="addDevice('knx_switch')">▣ KNX Anahtar</button>
-      <button onclick="addDevice('knx_thermostat')">🌡️ KNX Termostat</button>
-      <button onclick="addDevice('knx_sensor')">◉ KNX Sensör</button>
-      <button onclick="addDevice('ip_router')">🌐 IP Router</button>
-      <button onclick="addDevice('power_supply')">⚡ Power Supply</button>
-      <button onclick="addDevice('knx_thermo_switch')">🌡️▣ KNX Termostatlı Anahtar</button>
-      <button onclick="addDevice('line_coupler')">🔗 Line Coupler</button>
-      <button onclick="addDevice('binary_input')">🔘 Universal Binary Input</button>
+      <div id="knxProducts"></div>
     </details>
 
     <details>
       <summary>▶ Aktüatörler</summary>
-      <button onclick="addDevice('switch_actuator')">🔌 Switch Actuator</button>
-      <button onclick="addDevice('dimmer_actuator')">🔆 Dimmer Actuator</button>
-      <button onclick="addDevice('blind_actuator')">↕️ Blind Actuator</button>
-      <button onclick="addDevice('rgbw_actuator')">🌈 RGBW Actuator</button>
+      <div id="actuatorProducts"></div>
     </details>
 
     <details>
       <summary>▶ Enerji Ürünleri</summary>
-      <button onclick="addDevice('lamp')">💡 Lamba</button>
-      <button onclick="addDevice('dim_lamp')">🔆 Dim Lamba</button>
-      <button onclick="addDevice('blind')">↕️ Perde/Panjur UP-DOWN</button>
-      <button onclick="addDevice('aircon')">❄️ Klima</button>
-      <button onclick="addDevice('boiler')">🔥 Kombi</button>
-      <button onclick="addDevice('valve')">🚰 Vana</button>
-      <button onclick="addCollector()">🔥 Yerden Isıtma Kollektörü</button>
-      <button onclick="addDevice('door')">🚪 Kapı</button>
-      <button onclick="addDevice('motor_valve')">⚙️ Motorlu Vana</button>
-      <button onclick="addDevice('onoff')">🔴 ON/OFF Cihaz</button>
+      <div id="energyProducts"></div>
     </details>
 
     <details open>
@@ -70,14 +51,6 @@
       <button onclick="downloadPdf()">PDF Kablo Çıktısı</button>
       <button onclick="clearCurrent()">Ekranı Temizle</button>
     </details>
-  <div class="v6-note">
-      <b>v6 Kullanım:</b><br>
-      1. Kat ve oda ekle<br>
-      2. Ürün grubunu aç<br>
-      3. Ürün seç<br>
-      4. Hat seçip iki elemana tıkla<br>
-      5. PDF çıktı al
-    </div>
   </aside>
 
   <main class="workspace">
@@ -99,14 +72,32 @@
   </main>
 
   <aside class="rightbar">
-    <h3>Kayıtlı Projeler</h3>
-    <div id="projectList" class="panel-list">Henüz liste yok.</div>
-    <h3>Grup Adresleri</h3>
-    <div id="gaList" class="panel-list">Henüz oluşturulmadı.</div>
-    <h3>Ürün Listesi</h3>
-    <div id="bomList" class="panel-list">Henüz ürün yok.</div>
-    <h3>Bağlantılar</h3>
-    <div id="wireList" class="panel-list">Henüz bağlantı yok.</div>
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('projects')">Projeler</button>
+      <button class="tab" onclick="showTab('ga')">GA</button>
+      <button class="tab" onclick="showTab('bom')">Ürün</button>
+      <button class="tab" onclick="showTab('wires')">Bağlantı</button>
+    </div>
+
+    <section id="tab-projects" class="tab-panel active">
+      <h3>Kayıtlı Projeler</h3>
+      <div id="projectList" class="panel-list">Henüz liste yok.</div>
+    </section>
+
+    <section id="tab-ga" class="tab-panel">
+      <h3>Grup Adresleri</h3>
+      <div id="gaList" class="panel-list">Henüz oluşturulmadı.</div>
+    </section>
+
+    <section id="tab-bom" class="tab-panel">
+      <h3>Ürün Listesi</h3>
+      <div id="bomList" class="panel-list">Henüz ürün yok.</div>
+    </section>
+
+    <section id="tab-wires" class="tab-panel">
+      <h3>Bağlantılar</h3>
+      <div id="wireList" class="panel-list">Henüz bağlantı yok.</div>
+    </section>
   </aside>
 </div>
 <script src="/static/app.js"></script>
