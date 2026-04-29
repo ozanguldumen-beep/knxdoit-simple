@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>KNXdoit Simple v3</title>
+    <title>KNXdoit Simple v4</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -13,10 +13,14 @@
 
         <button onclick="addRoom()">+ Oda Ekle</button>
         <button onclick="addPanel()">+ Pano Ekle</button>
+        <button onclick="addCollector()">+ Kollektör Dolabı</button>
 
         <div class="section-title">Hatlar</div>
         <button onclick="setTool('energy')" id="btn-energy">Enerji Hattı 220V</button>
-        <button onclick="setTool('knx')" id="btn-knx">KNX Bus Hattı</button>
+        <button onclick="setTool('knx')" id="btn-knx">KNX Bus T Bağlantı</button>
+
+        <div class="section-title">İşlemler</div>
+        <button onclick="setTool('delete')" id="btn-delete">Silme Modu</button>
 
         <div class="section-title">Çıktılar</div>
         <button onclick="generateGA()">Grup Adresi Oluştur</button>
@@ -29,6 +33,7 @@
             1. Oda ve pano ekle<br>
             2. Odaya sağ tıkla: ürün ekle<br>
             3. Panoya sağ tıkla: modül ekle<br>
+            4. Kollektöre sağ tıkla: vana ekle<br>
             4. Enerji/KNX seç<br>
             5. Cihaz veya kanal seçerek kablo çiz
         </div>
@@ -43,6 +48,7 @@
             <div class="legend">
                 <span><b class="brown"></b> Enerji 220V</span>
                 <span><b class="green"></b> KNX Bus</span>
+                <span><b class="down"></b> Otomatik DOWN</span>
             </div>
         </header>
 
@@ -81,6 +87,10 @@
     <button onclick="addModuleToSelectedPanel('switch_actuator_12')">🔌 Switch Actuator 12K</button>
     <button onclick="addModuleToSelectedPanel('dimmer_actuator_4')">🔆 Dimmer Actuator 4K</button>
     <button onclick="addModuleToSelectedPanel('blind_actuator_4')">🪟 Blind Actuator 4K</button>
+</div>
+
+<div id="collectorMenu" class="context-menu">
+    <button onclick="addValveToSelectedCollector()">🔥 Vana Ekle</button>
 </div>
 
 <script src="/static/app.js"></script>

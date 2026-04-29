@@ -96,10 +96,10 @@ def pdf():
     styles = getSampleStyleSheet()
     story = []
 
-    story.append(Paragraph("KNXdoit - Elektrikçi Kablo Bağlantı Raporu", styles["Title"]))
+    story.append(Paragraph("KNXdoit v4 - Elektrikçi Kablo Bağlantı ve KNX Topoloji Raporu", styles["Title"]))
     story.append(Spacer(1, 8))
     story.append(Paragraph(
-        "Bu rapor saha elektrikçisi için hazırlanmıştır. Kahverengi hat 220V enerji, yeşil hat KNX Bus hattıdır.",
+        "Bu rapor saha elektrikçisi için hazırlanmıştır. Kahverengi hat 220V enerji, yeşil hat KNX Bus hattıdır. KNX Bus ana hat üzerinden T bağlantı mantığıyla gösterilir.",
         styles["Normal"]
     ))
     story.append(Paragraph(
@@ -183,7 +183,7 @@ def pdf():
 
     doc.build(story)
     buffer.seek(0)
-    return send_file(buffer, as_attachment=True, download_name="knxdoit_profesyonel_kablo_raporu.pdf", mimetype="application/pdf")
+    return send_file(buffer, as_attachment=True, download_name="knxdoit_v4_kablo_topoloji_raporu.pdf", mimetype="application/pdf")
 
 if __name__ == "__main__":
     app.run(debug=True)

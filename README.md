@@ -1,3 +1,3 @@
-# knxdoit-simple-v3
+# knxdoit-simple-v4
 
-KNXdoit Simple MVP v3.
+KNXdoit v4: silme, kollektör, KNX bus T bağlantı, profesyonel PDF.

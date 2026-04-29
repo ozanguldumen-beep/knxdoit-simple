@@ -1,6 +1,7 @@
 let state = {
     rooms: [],
     panels: [],
+    collectors: [],
     wires: []
 };
 
@@ -8,8 +9,11 @@ let currentTool = null;
 let selectedItem = null;
 let selectedRoomId = null;
 let selectedPanelId = null;
+let selectedCollectorId = null;
 let roomCounter = 0;
 let panelCounter = 0;
+    collectorCounter = 0;
+let collectorCounter = 0;
 
 const deviceTypes = {
     lamp: { icon: "💡", label: "Lamba", energy: true, singleEnergyConnection: true },
@@ -39,13 +43,14 @@ function setTool(tool) {
     currentTool = tool;
     selectedItem = null;
     document.querySelectorAll("button").forEach(b => b.classList.remove("active"));
-    const btn = document.getElementById(tool === "energy" ? "btn-energy" : "btn-knx");
+    const btn = document.getElementById(tool === "energy" ? "btn-energy" : (tool === "knx" ? "btn-knx" : "btn-delete"));
     if (btn) btn.classList.add("active");
 }
 
 function closeMenus() {
     document.getElementById("roomMenu").style.display = "none";
     document.getElementById("panelMenu").style.display = "none";
+    const cm = document.getElementById("collectorMenu"); if (cm) cm.style.display = "none";
 }
 
 document.addEventListener("click", () => closeMenus());
@@ -82,6 +87,25 @@ function addPanel() {
         modules: []
     });
 
+    render();
+    markDirty();
+}
+
+
+function addCollector() {
+    collectorCounter++;
+    state.collectors = state.collectors || [];
+    state.collectors.push({ id: uid("collector"), name: "Yerden Isıtma Kat Kollektörü", x: 850, y: 360 + (collectorCounter - 1) * 35, devices: [] });
+    render();
+    markDirty();
+}
+
+function addValveToSelectedCollector() {
+    state.collectors = state.collectors || [];
+    const c = state.collectors.find(x => x.id === selectedCollectorId);
+    if (!c) return;
+    c.devices.push({ id: uid("dev"), type: "valve", name: "Kollektör Vana " + (c.devices.length + 1) });
+    closeMenus();
     render();
     markDirty();
 }
@@ -134,7 +158,7 @@ function render() {
     const canvas = document.getElementById("canvas");
     canvas.querySelectorAll(".box").forEach(el => el.remove());
 
-    state.rooms.forEach(room => {
+    [...state.rooms, ...(state.collectors || [])].forEach(room => {
         const box = document.createElement("div");
         box.className = "box room";
         box.style.left = room.x + "px";
@@ -152,7 +176,7 @@ function render() {
             d.innerHTML = `<div class="device-icon">${meta.icon}</div><div>${dev.name}</div>`;
             d.onclick = (e) => {
                 e.stopPropagation();
-                handleItemClick({ kind: "device", parentId: room.id, deviceId: dev.id, device: dev, label: room.name + " - " + dev.name }, d);
+                const item = { kind: "device", parentId: room.id, deviceId: dev.id, device: dev, label: room.name + " - " + dev.name }; if (currentTool === "delete") { deleteDevice(item); return; } handleItemClick(item, d);
             };
             wrap.appendChild(d);
         });
@@ -166,10 +190,40 @@ function render() {
 
         box.onclick = (e) => {
             e.stopPropagation();
-            handleItemClick({ kind: "box", parentId: room.id, label: room.name }, box);
+            if (currentTool === "delete") { deleteBox(room.id, "room"); return; } handleItemClick({ kind: "box", parentId: room.id, label: room.name }, box);
         };
 
         makeDraggable(box, room);
+        canvas.appendChild(box);
+    });
+
+
+    (state.collectors || []).forEach(col => {
+        const box = document.createElement("div");
+        box.className = "box collector";
+        box.style.left = col.x + "px";
+        box.style.top = col.y + "px";
+        box.dataset.id = col.id;
+        box.innerHTML = `<div class="box-title">${col.name}</div><div class="device-wrap"></div>`;
+        const wrap = box.querySelector(".device-wrap");
+        col.devices.forEach(dev => {
+            const meta = deviceTypes[dev.type];
+            const d = document.createElement("div");
+            d.className = "device" + (hasEnergyConnection(dev.id) ? " connected" : "");
+            d.dataset.deviceId = dev.id;
+            d.innerHTML = `<div class="device-icon">${meta.icon}</div><div>${dev.name}</div>`;
+            d.onclick = (e) => {
+                e.stopPropagation();
+                const item = { kind: "device", parentId: col.id, deviceId: dev.id, device: dev, label: col.name + " - " + dev.name };
+                if (currentTool === "delete") { deleteDevice(item); return; }
+                handleItemClick(item, d);
+            };
+            d.oncontextmenu = (e) => { e.preventDefault(); e.stopPropagation(); deleteDevice({kind:"device", parentId: col.id, deviceId: dev.id, device: dev}); };
+            wrap.appendChild(d);
+        });
+        box.oncontextmenu = (e) => { e.preventDefault(); e.stopPropagation(); selectedCollectorId = col.id; showMenu("collectorMenu", e.clientX, e.clientY); };
+        box.onclick = (e) => { e.stopPropagation(); if (currentTool === "delete") { deleteBox(col.id, "collector"); return; } handleItemClick({kind:"box", parentId: col.id, label: col.name}, box); };
+        makeDraggable(box, col);
         canvas.appendChild(box);
     });
 
@@ -203,6 +257,7 @@ function render() {
                 c.title = ch.usedBy || "";
                 c.onclick = (e) => {
                     e.stopPropagation();
+                    if (currentTool === "delete") { clearChannel(ch.id); return; }
                     if (ch.locked) {
                         alert("Bu kanal perde/panjur DOWN için otomatik bloke edildi.");
                         return;
@@ -244,13 +299,14 @@ function render() {
 
         box.onclick = (e) => {
             e.stopPropagation();
-            handleItemClick({ kind: "box", parentId: panel.id, label: panel.name }, box);
+            if (currentTool === "delete") { deleteBox(panel.id, "panel"); return; } handleItemClick({ kind: "box", parentId: panel.id, label: panel.name }, box);
         };
 
         makeDraggable(box, panel);
         canvas.appendChild(box);
     });
 
+    drawBusBar(canvas);
     drawWires();
     updateBom();
     updateChannelList();
@@ -496,6 +552,7 @@ function drawWires() {
         line.setAttribute("x2", x2);
         line.setAttribute("y2", y2);
         line.setAttribute("class", wire.autoDown ? "auto-down-line" : (wire.type === "energy" ? "energy-line" : "knx-line"));
+        line.onclick = () => deleteWire(wire.id);
         svg.appendChild(line);
 
         const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
@@ -578,6 +635,36 @@ function updateBom() {
         });
     });
 
+
+    (state.collectors || []).forEach(col => {
+        const box = document.createElement("div");
+        box.className = "box collector";
+        box.style.left = col.x + "px";
+        box.style.top = col.y + "px";
+        box.dataset.id = col.id;
+        box.innerHTML = `<div class="box-title">${col.name}</div><div class="device-wrap"></div>`;
+        const wrap = box.querySelector(".device-wrap");
+        col.devices.forEach(dev => {
+            const meta = deviceTypes[dev.type];
+            const d = document.createElement("div");
+            d.className = "device" + (hasEnergyConnection(dev.id) ? " connected" : "");
+            d.dataset.deviceId = dev.id;
+            d.innerHTML = `<div class="device-icon">${meta.icon}</div><div>${dev.name}</div>`;
+            d.onclick = (e) => {
+                e.stopPropagation();
+                const item = { kind: "device", parentId: col.id, deviceId: dev.id, device: dev, label: col.name + " - " + dev.name };
+                if (currentTool === "delete") { deleteDevice(item); return; }
+                handleItemClick(item, d);
+            };
+            d.oncontextmenu = (e) => { e.preventDefault(); e.stopPropagation(); deleteDevice({kind:"device", parentId: col.id, deviceId: dev.id, device: dev}); };
+            wrap.appendChild(d);
+        });
+        box.oncontextmenu = (e) => { e.preventDefault(); e.stopPropagation(); selectedCollectorId = col.id; showMenu("collectorMenu", e.clientX, e.clientY); };
+        box.onclick = (e) => { e.stopPropagation(); if (currentTool === "delete") { deleteBox(col.id, "collector"); return; } handleItemClick({kind:"box", parentId: col.id, label: col.name}, box); };
+        makeDraggable(box, col);
+        canvas.appendChild(box);
+    });
+
     state.panels.forEach(panel => {
         panel.modules.forEach(m => {
             bom[m.name] = (bom[m.name] || 0) + 1;
@@ -606,6 +693,36 @@ function updateChannelList() {
     list.innerHTML = "";
     let has = false;
 
+
+    (state.collectors || []).forEach(col => {
+        const box = document.createElement("div");
+        box.className = "box collector";
+        box.style.left = col.x + "px";
+        box.style.top = col.y + "px";
+        box.dataset.id = col.id;
+        box.innerHTML = `<div class="box-title">${col.name}</div><div class="device-wrap"></div>`;
+        const wrap = box.querySelector(".device-wrap");
+        col.devices.forEach(dev => {
+            const meta = deviceTypes[dev.type];
+            const d = document.createElement("div");
+            d.className = "device" + (hasEnergyConnection(dev.id) ? " connected" : "");
+            d.dataset.deviceId = dev.id;
+            d.innerHTML = `<div class="device-icon">${meta.icon}</div><div>${dev.name}</div>`;
+            d.onclick = (e) => {
+                e.stopPropagation();
+                const item = { kind: "device", parentId: col.id, deviceId: dev.id, device: dev, label: col.name + " - " + dev.name };
+                if (currentTool === "delete") { deleteDevice(item); return; }
+                handleItemClick(item, d);
+            };
+            d.oncontextmenu = (e) => { e.preventDefault(); e.stopPropagation(); deleteDevice({kind:"device", parentId: col.id, deviceId: dev.id, device: dev}); };
+            wrap.appendChild(d);
+        });
+        box.oncontextmenu = (e) => { e.preventDefault(); e.stopPropagation(); selectedCollectorId = col.id; showMenu("collectorMenu", e.clientX, e.clientY); };
+        box.onclick = (e) => { e.stopPropagation(); if (currentTool === "delete") { deleteBox(col.id, "collector"); return; } handleItemClick({kind:"box", parentId: col.id, label: col.name}, box); };
+        makeDraggable(box, col);
+        canvas.appendChild(box);
+    });
+
     state.panels.forEach(panel => {
         panel.modules.forEach(module => {
             module.channels.forEach(ch => {
@@ -632,8 +749,10 @@ function loadProject() {
 
     try {
         state = JSON.parse(saved);
+        if (!state.collectors) state.collectors = [];
         roomCounter = state.rooms.length;
         panelCounter = state.panels.length;
+        collectorCounter = state.collectors.length;
         render();
         document.getElementById("status").innerText = "Kayıttan yüklendi";
     } catch (e) {
@@ -643,7 +762,7 @@ function loadProject() {
 
 function clearCanvas() {
     if (!confirm("Projeyi temizlemek istiyor musun?")) return;
-    state = { rooms: [], panels: [], wires: [] };
+    state = { rooms: [], panels: [], collectors: [], wires: [] };
     localStorage.removeItem("knxdoit_simple_v3_project");
     roomCounter = 0;
     panelCounter = 0;
@@ -673,3 +792,46 @@ async function downloadPdf() {
 
 loadProject();
 render();
+\n\nfunction drawWires() {\n    const svg = document.getElementById("wires");\n    svg.innerHTML = "";\n    state.wires.forEach(wire => {\n        const a = findElementForItem(wire.from);\n        const b = findElementForItem(wire.to);\n        if (!a || !b) return;\n        const canvasRect = document.getElementById("canvas").getBoundingClientRect();\n        const ar = a.getBoundingClientRect();\n        const br = b.getBoundingClientRect();\n        const x1 = ar.left + ar.width / 2 - canvasRect.left;\n        const y1 = ar.top + ar.height / 2 - canvasRect.top;\n        const x2 = br.left + br.width / 2 - canvasRect.left;\n        const y2 = br.top + br.height / 2 - canvasRect.top;\n        const mx = (x1 + x2) / 2;\n        const my = (y1 + y2) / 2;\n        let el;\n        if (wire.type === "knx") {\n            const busY = canvasRect.height - 31;\n            el = document.createElementNS("http://www.w3.org/2000/svg", "path");\n            el.setAttribute("d", `M ${x1} ${y1} L ${x1} ${busY} L ${x2} ${busY} L ${x2} ${y2}`);\n            el.setAttribute("class", "knx-line");\n        } else {\n            el = document.createElementNS("http://www.w3.org/2000/svg", "line");\n            el.setAttribute("x1", x1); el.setAttribute("y1", y1); el.setAttribute("x2", x2); el.setAttribute("y2", y2);\n            el.setAttribute("class", wire.autoDown ? "auto-down-line" : "energy-line");\n        }\n        el.onclick = () => deleteWire(wire.id);\n        svg.appendChild(el);\n        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");\n        text.setAttribute("x", mx + 6); text.setAttribute("y", my - 6); text.setAttribute("class", "wire-label");\n        text.textContent = wire.label || "";\n        svg.appendChild(text);\n    });\n}\n
+
+function drawBusBar(canvas) {
+    if (!state.panels.length && !state.rooms.length && !(state.collectors||[]).length) return;
+    const label = document.createElement("div");
+    label.className = "bus-label";
+    label.innerText = "ABB tarzı KNX BUS hattı";
+    const bar = document.createElement("div");
+    bar.className = "bus-bar";
+    canvas.appendChild(label);
+    canvas.appendChild(bar);
+}
+
+function deleteWire(id) {
+    if (currentTool !== "delete" && !confirm("Bu kablo silinsin mi?")) return;
+    state.wires = state.wires.filter(w => w.id !== id);
+    refreshChannelUsage();
+    render();
+    markDirty();
+}
+
+function deleteDevice(item) {
+    if (!confirm("Bu ürün silinsin mi? Bağlı kablolar da silinecek.")) return;
+    state.wires = state.wires.filter(w => ![w.from,w.to].some(x => x.deviceId === item.deviceId));
+    state.rooms.forEach(r => r.devices = r.devices.filter(d => d.id !== item.deviceId));
+    (state.collectors || []).forEach(c => c.devices = c.devices.filter(d => d.id !== item.deviceId));
+    refreshChannelUsage(); render(); markDirty();
+}
+
+function deleteBox(id, type) {
+    if (!confirm("Bu kutu silinsin mi?")) return;
+    state.wires = state.wires.filter(w => w.from.parentId !== id && w.to.parentId !== id);
+    if (type === "panel") state.panels = state.panels.filter(p => p.id !== id);
+    if (type === "collector") state.collectors = (state.collectors || []).filter(c => c.id !== id);
+    if (type === "room") state.rooms = state.rooms.filter(r => r.id !== id);
+    render(); markDirty();
+}
+
+function clearChannel(chId) {
+    if (!confirm("Bu kanal bağlantısı temizlensin mi?")) return;
+    state.wires = state.wires.filter(w => ![w.from,w.to].some(x => x.channelId === chId));
+    refreshChannelUsage(); render(); markDirty();
+}

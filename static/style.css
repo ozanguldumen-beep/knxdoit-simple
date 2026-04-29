@@ -91,6 +91,7 @@ header h2 { margin: 0 0 4px; font-size: 22px; }
 
 .brown { background: #c2410c; }
 .green { background: #0f9d58; }
+.down { background: #c2410c; opacity: .55; }
 
 .canvas {
     position: relative;
@@ -130,6 +131,13 @@ header h2 { margin: 0 0 4px; font-size: 22px; }
     padding: 10px;
     box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
     cursor: move;
+}
+
+.box.collector {
+    min-width: 260px;
+    min-height: 145px;
+    background: #fff7ed;
+    border-color: #c2410c;
 }
 
 .box.panel {
@@ -298,3 +306,5 @@ header h2 { margin: 0 0 4px; font-size: 22px; }
 .context-menu button:hover {
     background: #eef6f1;
 }
+
+.bus-bar{position:absolute;left:30px;right:30px;height:6px;background:#0f9d58;border-radius:8px;bottom:28px;box-shadow:0 0 0 3px rgba(15,157,88,.15);z-index:1}.bus-label{position:absolute;left:35px;bottom:40px;font-size:12px;font-weight:800;color:#0f9d58;z-index:1}.knx-line{cursor:pointer}.energy-line{cursor:pointer}.auto-down-line{cursor:pointer}.device.connected{background:#fff7ed;border-color:#c2410c}
