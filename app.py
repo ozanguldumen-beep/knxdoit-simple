@@ -12,23 +12,24 @@ app = Flask(__name__)
 FONT_NAME = "Helvetica"
 FONT_BOLD = "Helvetica-Bold"
 try:
-    font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
-    bold_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-    if os.path.exists(font_path):
-        pdfmetrics.registerFont(TTFont("DejaVuSans", font_path))
+    fp = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+    bp = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+    if os.path.exists(fp):
+        pdfmetrics.registerFont(TTFont("DejaVuSans", fp))
         FONT_NAME = "DejaVuSans"
-    if os.path.exists(bold_path):
-        pdfmetrics.registerFont(TTFont("DejaVuSans-Bold", bold_path))
+    if os.path.exists(bp):
+        pdfmetrics.registerFont(TTFont("DejaVuSans-Bold", bp))
         FONT_BOLD = "DejaVuSans-Bold"
 except Exception:
     pass
 
 DPT_RULES = {
-    "knx_switch": [("Buton 1", "DPST-1-1"), ("Buton 2", "DPST-1-1")],
+    "knx_switch": [("Buton", "DPST-1-1")],
     "knx_thermostat": [("Sıcaklık", "DPST-9-1"), ("Set Değeri", "DPST-9-1")],
     "knx_sensor": [("Hareket", "DPST-1-1"), ("Işık", "DPST-9-4")],
     "knx_thermo_switch": [("Sıcaklık", "DPST-9-1"), ("Buton", "DPST-1-1")],
-    "binary_input": [("Giriş 1", "DPST-1-1"), ("Giriş 2", "DPST-1-1")],
+    "binary_input": [("Giriş", "DPST-1-1")],
+    "aircon_gateway": [("Klima On/Off", "DPST-1-1"), ("Mod", "DPST-20-105"), ("Setpoint", "DPST-9-1"), ("Fan", "DPST-5-1")],
     "lamp": [("Aç/Kapa", "DPST-1-1"), ("Geri Bildirim", "DPST-1-1")],
     "dim_lamp": [("On/Off", "DPST-1-1"), ("Parlaklık", "DPST-5-1")],
     "blind": [("Up/Down", "DPST-1-8"), ("Stop", "DPST-1-7")],
@@ -36,7 +37,6 @@ DPT_RULES = {
     "motor_valve": [("Motorlu Vana", "DPST-1-1")],
     "onoff": [("On/Off", "DPST-1-1")],
     "aircon_onoff": [("Klima On/Off", "DPST-1-1")],
-    "aircon_gateway": [("Klima On/Off", "DPST-1-1"), ("Mod", "DPST-20-105"), ("Setpoint", "DPST-9-1"), ("Fan", "DPST-5-1")],
     "boiler": [("Kombi On/Off", "DPST-1-1")],
     "door": [("Kapı Kontrol", "DPST-1-1")],
 }
@@ -48,23 +48,21 @@ def index():
 @app.route("/api/group-addresses", methods=["POST"])
 def group_addresses():
     data = request.get_json(force=True) or {}
-    floors = data.get("floors", [])
     result = []
     sub = 1
     phys = 1
-    for floor_index, floor in enumerate(floors, start=1):
+    for floor_index, floor in enumerate(data.get("floors", []), start=1):
         for room_index, room in enumerate(floor.get("rooms", []), start=1):
             for dev in room.get("devices", []):
-                dtype = dev.get("type")
                 physical = f"1.{floor_index}.{phys}"
                 phys += 1
-                for fname, dpt in DPT_RULES.get(dtype, []):
+                for fname, dpt in DPT_RULES.get(dev.get("type"), []):
                     result.append({
                         "physical": physical,
                         "address": f"{floor_index}/{room_index}/{sub}",
                         "floor": floor.get("name", f"Kat {floor_index}"),
                         "room": room.get("name", "Oda"),
-                        "device": dev.get("name", dtype),
+                        "device": dev.get("name", dev.get("type")),
                         "function": fname,
                         "dpt": dpt
                     })
@@ -103,7 +101,7 @@ def draw_pdf_schematic(c, data, y_start):
         for r in f.get("rooms", []):
             for d in r.get("devices", []):
                 typ = d.get("type", "")
-                if typ.startswith("knx") or typ in ["binary_input", "aircon_gateway"]:
+                if d.get("kind") in ["knx", "actuator"] or typ in ["aircon_gateway", "binary_input"]:
                     devices.append((r.get("name","Oda"), d.get("name","Cihaz"), typ))
         rows.append((f.get("name","Kat"), devices))
 
@@ -122,7 +120,7 @@ def draw_pdf_schematic(c, data, y_start):
             x = bus_left + step*i
             c.setStrokeColor(colors.HexColor("#0f9d58"))
             c.line(x, row_y, x, row_y+38)
-            icon = "A" if "actuator" in typ else "T" if "thermostat" in typ else "S" if "sensor" in typ else "G" if "gateway" in typ else "K"
+            icon = "A" if "actuator" in typ else "T" if "thermostat" in typ else "S" if "sensor" in typ else "K"
             draw_device(c, x, row_y+55, name, icon)
     return y - min(len(rows),4)*88 - 10
 
@@ -174,7 +172,7 @@ def pdf():
     y -= 10
     c.setFont(FONT_NAME, 6.5)
 
-    for i, w in enumerate(wires[:32], start=1):
+    for i, w in enumerate(wires[:35], start=1):
         if y < 28:
             c.showPage()
             y = height-40
@@ -196,7 +194,7 @@ def pdf():
     c.drawString(30, 16, "Bu rapor saha elektrikçisi için hazırlanmıştır. KNX programlama/grup adresleri ayrıca kontrol edilmelidir.")
     c.save()
     buffer.seek(0)
-    return send_file(buffer, as_attachment=True, download_name="knxdoit_v9_pro_raporu.pdf", mimetype="application/pdf")
+    return send_file(buffer, as_attachment=True, download_name="knxdoit_v10_releli_rapor.pdf", mimetype="application/pdf")
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -1,3 +1,3 @@
-# KNXdoit v9 Pro Validation
+# KNXdoit v10 Relay System
 
-KNX rule validation, stricter wiring rules, HVAC gateway option, and project validation report.
+Relay/channel based actuator UI, right panel toggle, zoom, and stricter wiring rules.

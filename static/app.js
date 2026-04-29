@@ -1,19 +1,25 @@
 const catalog = {
-  knx_switch:{icon:"▣", name:"KNX Anahtar", kind:"knx"},
+  knx_switch_1:{icon:"▣", name:"KNX Anahtar 1 Buton", kind:"knx", buttons:1},
+  knx_switch_2:{icon:"▣", name:"KNX Anahtar 2 Buton", kind:"knx", buttons:2},
+  knx_switch_4:{icon:"▣", name:"KNX Anahtar 4 Buton", kind:"knx", buttons:4},
+  knx_switch_6:{icon:"▣", name:"KNX Anahtar 6 Buton", kind:"knx", buttons:6},
+  knx_switch_8:{icon:"▣", name:"KNX Anahtar 8 Buton", kind:"knx", buttons:8},
   knx_thermostat:{icon:"🌡️", name:"KNX Termostat", kind:"knx"},
   knx_sensor:{icon:"◉", name:"KNX Sensör", kind:"knx"},
   ip_router:{icon:"🌐", name:"IP Router", kind:"knx"},
   power_supply:{icon:"⚡", name:"Power Supply", kind:"knx", required:true},
-  knx_thermo_switch:{icon:"🌡️▣", name:"KNX Termostatlı Anahtar", kind:"knx"},
+  knx_thermo_switch:{icon:"🌡️▣", name:"KNX Termostatlı Anahtar", kind:"knx", buttons:4},
   line_coupler:{icon:"🔗", name:"Line Coupler", kind:"knx"},
   binary_input:{icon:"🔘", name:"Universal Binary Input", kind:"knx"},
   aircon_gateway:{icon:"❄️", name:"KNX Klima Gateway", kind:"knx"},
-  switch_actuator_8:{icon:"🔌", name:"Switch Actuator 8 Çıkış", kind:"actuator", outputs:8, amp:10},
-  switch_actuator_12:{icon:"🔌", name:"Switch Actuator 12 Çıkış", kind:"actuator", outputs:12, amp:10},
-  switch_actuator_16:{icon:"🔌", name:"Switch Actuator 16 Çıkış", kind:"actuator", outputs:16, amp:10},
-  switch_actuator_24:{icon:"🔌", name:"Switch Actuator 24 Çıkış", kind:"actuator", outputs:24, amp:10},
-  dimmer_actuator:{icon:"🔆", name:"Dimmer Actuator", kind:"actuator", outputs:4, amp:4},
-  rgbw_actuator:{icon:"🌈", name:"RGBW Actuator", kind:"actuator", outputs:4, amp:4},
+  switch_actuator_8:{icon:"🔌", name:"Switch Actuator 8 Çıkış", kind:"actuator", channelType:"switch", outputs:8, amp:10},
+  switch_actuator_12:{icon:"🔌", name:"Switch Actuator 12 Çıkış", kind:"actuator", channelType:"switch", outputs:12, amp:10},
+  switch_actuator_16:{icon:"🔌", name:"Switch Actuator 16 Çıkış", kind:"actuator", channelType:"switch", outputs:16, amp:10},
+  switch_actuator_24:{icon:"🔌", name:"Switch Actuator 24 Çıkış", kind:"actuator", channelType:"switch", outputs:24, amp:10},
+  dimmer_actuator_2:{icon:"🔆", name:"Dimmer Actuator 2 Kanal", kind:"actuator", channelType:"dimmer", outputs:2, amp:4},
+  dimmer_actuator_4:{icon:"🔆", name:"Dimmer Actuator 4 Kanal", kind:"actuator", channelType:"dimmer", outputs:4, amp:4},
+  dimmer_actuator_8:{icon:"🔆", name:"Dimmer Actuator 8 Kanal", kind:"actuator", channelType:"dimmer", outputs:8, amp:4},
+  rgbw_actuator:{icon:"🌈", name:"RGBW Actuator 4 Kanal", kind:"actuator", channelType:"rgbw", outputs:4, amp:4},
   lamp:{icon:"💡", name:"Lamba", kind:"energy", load:1},
   dim_lamp:{icon:"🔆", name:"Dim Lamba", kind:"energy", load:1},
   blind:{icon:"↕️", name:"Perde/Panjur", kind:"energy", load:2, needsTwoOutputs:true},
@@ -27,13 +33,10 @@ const catalog = {
 };
 
 const groups = {
-  knxProducts:["knx_switch","knx_thermostat","knx_sensor","ip_router","power_supply","knx_thermo_switch","line_coupler","binary_input","aircon_gateway"],
-  actuatorProducts:["switch_actuator_8","switch_actuator_12","switch_actuator_16","switch_actuator_24","dimmer_actuator","rgbw_actuator"],
+  knxProducts:["knx_switch_1","knx_switch_2","knx_switch_4","knx_switch_6","knx_switch_8","knx_thermostat","knx_sensor","ip_router","power_supply","knx_thermo_switch","line_coupler","binary_input","aircon_gateway"],
+  actuatorProducts:["switch_actuator_8","switch_actuator_12","switch_actuator_16","switch_actuator_24","dimmer_actuator_2","dimmer_actuator_4","dimmer_actuator_8","rgbw_actuator"],
   energyProducts:["lamp","dim_lamp","blind","aircon_onoff","boiler","valve","collector","door","motor_valve","onoff"]
 };
-
-let qty = {};
-Object.keys(catalog).forEach(k=>qty[k]=1);
 
 let state = {
   projectName:"Villa Projesi",
@@ -46,6 +49,7 @@ let state = {
 };
 let selected = null;
 let tool = null;
+let zoom = 1;
 
 function uid(p){ return p+"_"+Date.now()+"_"+Math.floor(Math.random()*9999); }
 
@@ -59,9 +63,6 @@ function renderProductMenus(){
       row.className="product-row";
       row.innerHTML=`
         <div class="name">${meta.icon} ${meta.name}</div>
-        <button class="qty-btn" onclick="changeQty('${type}',-1)">−</button>
-        <div class="qty-display" id="qty-${type}">${qty[type]}</div>
-        <button class="qty-btn" onclick="changeQty('${type}',1)">+</button>
         <button class="add-btn" onclick="addDevice('${type}')">Ekle</button>
       `;
       el.appendChild(row);
@@ -69,9 +70,23 @@ function renderProductMenus(){
   });
 }
 
-function changeQty(type,delta){
-  qty[type]=Math.max(1,(qty[type]||1)+delta);
-  document.getElementById("qty-"+type).innerText=qty[type];
+function toggleRightbar(){
+  document.getElementById("appRoot").classList.toggle("right-hidden");
+  setTimeout(drawWires, 50);
+}
+
+function zoomIn(){
+  zoom = Math.min(1.6, +(zoom + 0.1).toFixed(2));
+  applyZoom();
+}
+function zoomOut(){
+  zoom = Math.max(0.5, +(zoom - 0.1).toFixed(2));
+  applyZoom();
+}
+function applyZoom(){
+  document.getElementById("zoomLayer").style.transform = `scale(${zoom})`;
+  document.getElementById("zoomLabel").innerText = Math.round(zoom*100)+"%";
+  drawWires();
 }
 
 function showTab(name, ev){
@@ -111,13 +126,22 @@ function addRoom(){
   render(); markDirty();
 }
 
+function createChannels(meta){
+  const channels = [];
+  const outputs = meta.outputs || 0;
+  for(let i=1;i<=outputs;i++){
+    channels.push({id:uid("ch"), no:i, label:"K"+i, used:false, locked:false, usedBy:null, direction:null});
+  }
+  return channels;
+}
+
 function addCollector(count=2){
   const n = state.collectors.length;
   const c = prompt("Kollektör kaç vanalı olsun?", String(count || 4));
   const valveCount = Math.max(1, parseInt(c || "4"));
   const devices = [];
   for(let i=1;i<=valveCount;i++){
-    devices.push({id:uid("dev"), type:"valve", name:"Kollektör Vana "+i});
+    devices.push({id:uid("dev"), type:"valve", name:"Kollektör Vana "+i, kind:"energy"});
   }
   state.collectors.push({id:uid("collector"), name:"Yerden Isıtma Kollektörü ("+valveCount+" vana)", x:760, y:360+n*190, devices});
   render(); markDirty();
@@ -126,24 +150,33 @@ function addCollector(count=2){
 function addDevice(type){
   const meta = catalog[type];
   if(!meta) return;
-  const count = qty[type] || 1;
 
   if(meta.kind==="collector"){
-    for(let i=0;i<count;i++) addCollector(4);
+    addCollector(4);
     return;
   }
 
-  for(let i=0;i<count;i++){
-    if(meta.kind==="actuator" || ["ip_router","power_supply","line_coupler"].includes(type)){
-      if(!state.panels.length){
-        state.panels.push({id:uid("panel"), name:"Ana Pano", x:520, y:350, devices:[]});
-      }
-      state.panels[0].devices.push({id:uid("dev"), type, name:meta.name});
-    } else {
-      const floor = state.floors[state.activeFloor];
-      if(!floor.rooms.length){ alert("Önce oda eklemelisin."); return; }
-      floor.rooms[floor.rooms.length-1].devices.push({id:uid("dev"), type, name:meta.name});
+  const device = {
+    id:uid("dev"),
+    type,
+    name:meta.name,
+    kind:meta.kind,
+    channelType:meta.channelType || null,
+    outputs:meta.outputs || 0,
+    amp:meta.amp || null,
+    buttons:meta.buttons || 0,
+    channels:createChannels(meta)
+  };
+
+  if(meta.kind==="actuator" || ["ip_router","power_supply","line_coupler"].includes(type)){
+    if(!state.panels.length){
+      state.panels.push({id:uid("panel"), name:"Ana Pano", x:520, y:350, devices:[]});
     }
+    state.panels[0].devices.push(device);
+  } else {
+    const floor = state.floors[state.activeFloor];
+    if(!floor.rooms.length){ alert("Önce oda eklemelisin."); return; }
+    floor.rooms[floor.rooms.length-1].devices.push(device);
   }
   render(); markDirty();
 }
@@ -163,6 +196,10 @@ function allDevices(){
   return arr;
 }
 
+function getDeviceById(id){
+  return allDevices().find(d=>d.id===id);
+}
+
 function render(){
   document.getElementById("projectName").value=state.projectName;
   document.getElementById("titleProject").innerText=state.projectName;
@@ -177,22 +214,22 @@ function render(){
     tabs.appendChild(b);
   });
 
-  const canvas=document.getElementById("canvas");
-  canvas.querySelectorAll(".box,.bus-bar,.bus-label").forEach(x=>x.remove());
+  const layer=document.getElementById("zoomLayer");
+  layer.querySelectorAll(".box,.bus-bar,.bus-label").forEach(x=>x.remove());
 
   const floor=state.floors[state.activeFloor];
-  floor.rooms.forEach(room=>renderBox(canvas, room, "room"));
-  state.panels.forEach(panel=>renderBox(canvas, panel, "panel"));
-  state.collectors.forEach(c=>renderBox(canvas, c, "collector"));
+  floor.rooms.forEach(room=>renderBox(layer, room, "room"));
+  state.panels.forEach(panel=>renderBox(layer, panel, "panel"));
+  state.collectors.forEach(c=>renderBox(layer, c, "collector"));
 
-  drawBus(canvas);
+  drawBus(layer);
   drawWires();
   updateBom();
   updateWireList();
   updateValidationUI(false);
 }
 
-function renderBox(canvas, obj, cls){
+function renderBox(layer, obj, cls){
   const box=document.createElement("div");
   box.className="box "+cls;
   box.style.left=obj.x+"px"; box.style.top=obj.y+"px";
@@ -201,21 +238,73 @@ function renderBox(canvas, obj, cls){
   const wrap=box.querySelector(".device-wrap");
 
   obj.devices.forEach(dev=>{
-    const meta=catalog[dev.type] || {icon:"⚙️", name:dev.name, kind:"energy"};
-    const d=document.createElement("div");
-    d.className="device";
-    const relatedWarnings = (state.validation||[]).filter(v=>v.deviceId===dev.id);
-    if(relatedWarnings.some(v=>v.level==="error")) d.classList.add("error");
-    else if(relatedWarnings.length) d.classList.add("warn");
-    d.dataset.deviceId=dev.id;
-    d.innerHTML=`<div class="device-icon">${meta.icon}</div><div>${dev.name}</div>`;
-    d.onclick=(e)=>{
-      e.stopPropagation();
-      if(tool==="delete"){ deleteDevice(dev.id); return; }
-      clickItem({kind:"device", id:dev.id, type:dev.type, label:obj.name+" - "+dev.name}, d);
-    };
-    d.oncontextmenu=(e)=>{ e.preventDefault(); e.stopPropagation(); deleteDevice(dev.id); };
-    wrap.appendChild(d);
+    const meta=catalog[dev.type] || {icon:"⚙️", name:dev.name, kind:dev.kind};
+    if(dev.kind==="actuator"){
+      const m=document.createElement("div");
+      m.className="module-card";
+      m.dataset.deviceId=dev.id;
+      m.innerHTML=`
+        <div class="module-title">${meta.icon} ${dev.name}</div>
+        <div class="module-meta">${dev.outputs} çıkış / ${dev.amp || "-"}A</div>
+        <div class="knx-port" data-device-id="${dev.id}">KNX</div>
+        <div class="channel-grid"></div>
+      `;
+      const port=m.querySelector(".knx-port");
+      port.onclick=(e)=>{
+        e.stopPropagation();
+        if(tool==="delete"){ deleteDevice(dev.id); return; }
+        clickItem({kind:"knxport", id:dev.id, type:dev.type, label:obj.name+" - "+dev.name+" KNX"}, port);
+      };
+      const grid=m.querySelector(".channel-grid");
+      dev.channels.forEach(ch=>{
+        const c=document.createElement("div");
+        c.className="channel"+(ch.used?" used":"")+(ch.locked?" locked":"");
+        c.dataset.channelId=ch.id;
+        c.dataset.deviceId=dev.id;
+        c.innerHTML=`<b>${ch.label}${ch.direction ? " "+ch.direction : ""}</b><br><small>${ch.usedBy ? shortName(ch.usedBy) : "Boş"}</small>`;
+        c.onclick=(e)=>{
+          e.stopPropagation();
+          if(tool==="delete"){ clearChannel(dev.id, ch.id); return; }
+          if(ch.locked){ alert("Bu kanal Perde/Panjur DOWN için otomatik kilitli."); return; }
+          clickItem({kind:"channel", id:ch.id, deviceId:dev.id, type:dev.type, channelType:dev.channelType, label:obj.name+" - "+dev.name+" "+ch.label, channelNo:ch.no}, c);
+        };
+        grid.appendChild(c);
+      });
+      wrap.appendChild(m);
+    } else {
+      const d=document.createElement("div");
+      d.className="device";
+      const relatedWarnings = (state.validation||[]).filter(v=>v.deviceId===dev.id);
+      if(relatedWarnings.some(v=>v.level==="error")) d.classList.add("error");
+      else if(relatedWarnings.length) d.classList.add("warn");
+      d.dataset.deviceId=dev.id;
+      d.innerHTML=`<div class="device-icon">${meta.icon}</div><div>${dev.name}</div>`;
+
+      if(dev.buttons){
+        const bg=document.createElement("div");
+        bg.className="button-grid";
+        for(let i=1;i<=dev.buttons;i++){
+          const bc=document.createElement("div");
+          bc.className="button-cell";
+          bc.innerHTML=`B${i}`;
+          bc.onclick=(e)=>{
+            e.stopPropagation();
+            if(tool==="delete"){ deleteDevice(dev.id); return; }
+            clickItem({kind:"button", id:uid("btnref"), deviceId:dev.id, type:dev.type, label:obj.name+" - "+dev.name+" Buton "+i}, bc);
+          };
+          bg.appendChild(bc);
+        }
+        d.appendChild(bg);
+      }
+
+      d.onclick=(e)=>{
+        e.stopPropagation();
+        if(tool==="delete"){ deleteDevice(dev.id); return; }
+        clickItem({kind:"device", id:dev.id, type:dev.type, label:obj.name+" - "+dev.name}, d);
+      };
+      d.oncontextmenu=(e)=>{ e.preventDefault(); e.stopPropagation(); deleteDevice(dev.id); };
+      wrap.appendChild(d);
+    }
   });
 
   box.onclick=(e)=>{
@@ -225,8 +314,10 @@ function renderBox(canvas, obj, cls){
   };
 
   makeDraggable(box,obj);
-  canvas.appendChild(box);
+  layer.appendChild(box);
 }
+
+function shortName(s){ return (s||"").split(" - ").pop().slice(0,14); }
 
 function clickItem(item, el){
   if(!tool){ alert("Önce Enerji / KNX / Silme modu seç."); return; }
@@ -240,82 +331,125 @@ function clickItem(item, el){
     clearSel();
     return;
   }
-  const wire={
-    id:uid("wire"),
-    type:tool,
-    from:selected.item,
-    to:item,
-    fromLabel:selected.item.label,
-    toLabel:item.label,
-    label:tool==="knx"?"KNX BUS T":"220V"
-  };
-  if(tool==="energy" && (selected.item.type==="blind" || item.type==="blind")){
-    wire.label="UP";
-    state.wires.push(wire);
-    state.wires.push({...wire, id:uid("wire"), label:"DOWN", autoDown:true});
-  } else {
-    state.wires.push(wire);
-  }
+  createConnection(selected.item, item, tool);
   clearSel(); render(); markDirty();
 }
 
-function hasEnergyConnection(deviceId){
-  return state.wires.some(w => w.type === "energy" && (w.from.id === deviceId || w.to.id === deviceId));
+function createConnection(a,b,t){
+  const wire={
+    id:uid("wire"),
+    type:t,
+    from:a,
+    to:b,
+    fromLabel:a.label,
+    toLabel:b.label,
+    label:t==="knx"?"KNX BUS T":"220V"
+  };
+
+  if(t==="energy"){
+    const loadItem = isLoad(a.type) ? a : b;
+    const channelItem = a.kind==="channel" ? a : b;
+    if(loadItem.type==="blind"){
+      wire.label="UP";
+      state.wires.push(wire);
+      markChannelUsed(channelItem, loadItem, "UP", false);
+      const down = getNextChannelItem(channelItem);
+      if(down){
+        const downWire={...wire, id:uid("wire"), from:down, to:loadItem, fromLabel:down.label, label:"DOWN", autoDown:true};
+        state.wires.push(downWire);
+        markChannelUsed(down, loadItem, "DOWN", true);
+      }
+      return;
+    }
+    markChannelUsed(channelItem, loadItem, null, false);
+  }
+  state.wires.push(wire);
 }
 
+function markChannelUsed(channelItem, loadItem, direction, locked){
+  const dev=getRealDevice(channelItem.deviceId);
+  if(!dev) return;
+  const ch=dev.channels.find(c=>c.id===channelItem.id);
+  if(!ch) return;
+  ch.used=true;
+  ch.usedBy=loadItem.label;
+  ch.direction=direction;
+  ch.locked=locked;
+}
+
+function getNextChannelItem(channelItem){
+  const dev=getRealDevice(channelItem.deviceId);
+  if(!dev) return null;
+  const idx=dev.channels.findIndex(c=>c.id===channelItem.id);
+  const next=dev.channels[idx+1];
+  if(!next || next.used || next.locked) return null;
+  return {kind:"channel", id:next.id, deviceId:dev.id, type:dev.type, channelType:dev.channelType, label:dev.name+" "+next.label, channelNo:next.no};
+}
+
+function getRealDevice(id){
+  for(const p of state.panels){
+    const d=p.devices.find(x=>x.id===id);
+    if(d) return d;
+  }
+  for(const f of state.floors){
+    for(const r of f.rooms){
+      const d=r.devices.find(x=>x.id===id);
+      if(d) return d;
+    }
+  }
+  for(const c of state.collectors){
+    const d=c.devices.find(x=>x.id===id);
+    if(d) return d;
+  }
+  return null;
+}
+
+function isLoad(t){
+  return ["lamp","dim_lamp","blind","aircon_onoff","boiler","valve","door","motor_valve","onoff"].includes(t);
+}
+function isKnxOnly(t){
+  const meta=catalog[t];
+  return meta && meta.kind==="knx";
+}
+function isActuator(t){
+  const meta=catalog[t];
+  return meta && meta.kind==="actuator";
+}
+function hasEnergyConnection(deviceId){
+  return state.wires.some(w => w.type === "energy" && ((w.from.deviceId===deviceId || w.to.deviceId===deviceId) || (w.from.id === deviceId || w.to.id === deviceId)));
+}
 function hasKnxConnection(deviceId){
-  return state.wires.some(w => w.type === "knx" && (w.from.id === deviceId || w.to.id === deviceId));
+  return state.wires.some(w => w.type === "knx" && (w.from.id === deviceId || w.to.id === deviceId || w.from.deviceId === deviceId || w.to.deviceId === deviceId));
 }
 
 function allowed(a,b,t){
-  const loadTypes=["lamp","dim_lamp","blind","aircon_onoff","boiler","valve","door","motor_valve","onoff"];
-  const actuatorTypes=["switch_actuator_8","switch_actuator_12","switch_actuator_16","switch_actuator_24","dimmer_actuator","rgbw_actuator"];
-  const switchActuators=["switch_actuator_8","switch_actuator_12","switch_actuator_16","switch_actuator_24"];
-  const knxOnlyTypes=["knx_switch","knx_thermostat","knx_sensor","ip_router","power_supply","knx_thermo_switch","line_coupler","binary_input","aircon_gateway"];
-
   if(t==="knx"){
-    if(loadTypes.includes(a.type)||loadTypes.includes(b.type)){ alert("Enerji ürünü KNX hattına bağlanamaz."); return false; }
+    if(isLoad(a.type)||isLoad(b.type)){ alert("Enerji ürünü KNX hattına bağlanamaz."); return false; }
+    return true;
   }
 
   if(t==="energy"){
-    const aLoad=loadTypes.includes(a.type), bLoad=loadTypes.includes(b.type);
-    const aAct=actuatorTypes.includes(a.type), bAct=actuatorTypes.includes(b.type);
+    const aLoad=isLoad(a.type), bLoad=isLoad(b.type);
+    const aCh=a.kind==="channel", bCh=b.kind==="channel";
+    const loadItem = aLoad ? a : (bLoad ? b : null);
+    const chItem = aCh ? a : (bCh ? b : null);
 
     if(aLoad && bLoad){ alert("Enerjili ürünler birbirine bağlanamaz. Lamba lambaya bağlanmaz."); return false; }
-    if(aAct && bAct){ alert("Aktüatör aktüatöre enerji hattı ile bağlanamaz."); return false; }
-    if(knxOnlyTypes.includes(a.type) || knxOnlyTypes.includes(b.type)){ alert("KNX ürünler enerji hattına bağlanamaz."); return false; }
+    if(isKnxOnly(a.type) || isKnxOnly(b.type)){ alert("KNX ürünler enerji hattına bağlanamaz."); return false; }
+    if(!loadItem || !chItem){ alert("Enerji hattı aktüatör röle kanalı ile enerji ürünü arasında çizilir."); return false; }
 
-    const loadItem = aLoad ? a : (bLoad ? b : null);
-    const actItem = aAct ? a : (bAct ? b : null);
+    const channelMeta=catalog[chItem.type];
+    if(!channelMeta || channelMeta.kind!=="actuator"){ alert("Enerji hattı için aktüatör kanalı seçmelisin."); return false; }
 
-    if(!((aLoad && bAct) || (bLoad && aAct))){
-      alert("Enerji hattı sadece aktüatör ile enerjili ürün arasında çizilir.");
-      return false;
-    }
+    if(loadItem.type==="dim_lamp" && chItem.channelType!=="dimmer"){ alert("Dim lamba sadece Dimmer Actuator kanalına bağlanır."); return false; }
+    if(loadItem.type==="blind" && chItem.channelType!=="switch"){ alert("Perde/Panjur Switch Actuator kanalına bağlanır."); return false; }
+    if(loadItem.type!=="dim_lamp" && loadItem.type!=="blind" && chItem.channelType!=="switch"){ alert("Bu enerji ürünü Switch Actuator kanalına bağlanmalı."); return false; }
 
-    if(loadItem && hasEnergyConnection(loadItem.id)){
-      alert("Bu enerji ürününe zaten bir röle/kablo bağlandı. İkinci enerji kablosu bağlanamaz.");
-      return false;
-    }
+    if(hasEnergyConnection(loadItem.id)){ alert("Bu enerji ürününe zaten bir röle/kablo bağlandı. İkinci enerji kablosu bağlanamaz."); return false; }
 
-    if(loadItem && loadItem.type==="dim_lamp" && actItem.type!=="dimmer_actuator"){
-      alert("Dim lamba sadece Dimmer Actuator'a bağlanır.");
-      return false;
-    }
-
-    if(loadItem && loadItem.type==="blind" && !switchActuators.includes(actItem.type)){
-      alert("Perde/Panjur Switch Actuator çıkışına bağlanır. Bağlanınca UP/DOWN iki röle kullanır.");
-      return false;
-    }
-
-    if(loadItem && !["dim_lamp"].includes(loadItem.type) && actItem.type==="dimmer_actuator"){
-      alert("Dimmer Actuator sadece dim lamba gibi dim yükler için kullanılmalı.");
-      return false;
-    }
-
-    if(loadItem && ["lamp","valve","aircon_onoff","boiler","door","motor_valve","onoff","blind"].includes(loadItem.type) && !switchActuators.includes(actItem.type) && loadItem.type!=="dim_lamp"){
-      alert("Bu enerji ürünü Switch Actuator çıkışına bağlanmalı.");
-      return false;
+    if(loadItem.type==="blind"){
+      const next=getNextChannelItem(chItem);
+      if(!next){ alert("Perde/Panjur için yanındaki DOWN kanalı boş olmalı."); return false; }
     }
   }
   return true;
@@ -326,30 +460,30 @@ function clearSel(){
   document.querySelectorAll(".selected").forEach(x=>x.classList.remove("selected"));
 }
 
-function drawBus(canvas){
+function drawBus(layer){
   const label=document.createElement("div");
   label.className="bus-label";
   label.innerText="KNX BUS HATTI";
   const bar=document.createElement("div");
   bar.className="bus-bar";
-  canvas.appendChild(label);
-  canvas.appendChild(bar);
+  layer.appendChild(label);
+  layer.appendChild(bar);
 }
 
 function drawWires(){
   const svg=document.getElementById("wires");
   svg.innerHTML="";
-  const canvasRect=document.getElementById("canvas").getBoundingClientRect();
+  const layerRect=document.getElementById("zoomLayer").getBoundingClientRect();
   state.wires.forEach(w=>{
-    const a=document.querySelector(`[data-device-id="${w.from.id}"],[data-id="${w.from.id}"]`);
-    const b=document.querySelector(`[data-device-id="${w.to.id}"],[data-id="${w.to.id}"]`);
+    const a=findElementForItem(w.from);
+    const b=findElementForItem(w.to);
     if(!a||!b) return;
     const ar=a.getBoundingClientRect(), br=b.getBoundingClientRect();
-    const x1=ar.left+ar.width/2-canvasRect.left, y1=ar.top+ar.height/2-canvasRect.top;
-    const x2=br.left+br.width/2-canvasRect.left, y2=br.top+br.height/2-canvasRect.top;
+    const x1=(ar.left+ar.width/2-layerRect.left)/zoom, y1=(ar.top+ar.height/2-layerRect.top)/zoom;
+    const x2=(br.left+br.width/2-layerRect.left)/zoom, y2=(br.top+br.height/2-layerRect.top)/zoom;
     let el;
     if(w.type==="knx"){
-      const busY=canvasRect.height-31;
+      const busY=1120;
       el=document.createElementNS("http://www.w3.org/2000/svg","path");
       el.setAttribute("d",`M ${x1} ${y1} L ${x1} ${busY} L ${x2} ${busY} L ${x2} ${y2}`);
       el.setAttribute("class","knx-line");
@@ -367,16 +501,24 @@ function drawWires(){
   });
 }
 
+function findElementForItem(item){
+  if(item.kind==="channel") return document.querySelector(`[data-channel-id="${item.id}"]`);
+  if(item.kind==="knxport") return document.querySelector(`.knx-port[data-device-id="${item.id}"]`);
+  if(item.kind==="button") return document.querySelector(`[data-device-id="${item.deviceId}"]`);
+  if(item.kind==="device") return document.querySelector(`[data-device-id="${item.id}"]`);
+  return document.querySelector(`[data-id="${item.id}"]`);
+}
+
 function makeDraggable(el,obj){
   let drag=false, ox=0, oy=0;
   el.onmousedown=e=>{
-    if(e.target.closest(".device")) return;
+    if(e.target.closest(".device") || e.target.closest(".channel") || e.target.closest(".knx-port") || e.target.closest(".button-cell")) return;
     drag=true; ox=e.offsetX; oy=e.offsetY;
   };
   document.onmousemove=e=>{
     if(!drag) return;
-    const r=document.getElementById("canvas").getBoundingClientRect();
-    obj.x=e.clientX-r.left-ox; obj.y=e.clientY-r.top-oy;
+    const r=document.getElementById("zoomLayer").getBoundingClientRect();
+    obj.x=(e.clientX-r.left)/zoom-ox; obj.y=(e.clientY-r.top)/zoom-oy;
     el.style.left=obj.x+"px"; el.style.top=obj.y+"px";
     drawWires();
   };
@@ -385,7 +527,34 @@ function makeDraggable(el,obj){
 
 function deleteWire(id){
   if(!confirm("Bu kablo silinsin mi?")) return;
+  const w=state.wires.find(x=>x.id===id);
   state.wires=state.wires.filter(w=>w.id!==id);
+  refreshChannels();
+  render(); markDirty();
+}
+
+function refreshChannels(){
+  state.panels.forEach(p=>p.devices.forEach(d=>{
+    if(d.channels) d.channels.forEach(ch=>{ch.used=false; ch.locked=false; ch.usedBy=null; ch.direction=null;});
+  }));
+  const old=[...state.wires];
+  state.wires=[];
+  old.forEach(w=>{
+    if(w.type==="energy"){
+      const chItem = w.from.kind==="channel" ? w.from : w.to.kind==="channel" ? w.to : null;
+      const loadItem = isLoad(w.from.type) ? w.from : isLoad(w.to.type) ? w.to : null;
+      if(chItem && loadItem){
+        markChannelUsed(chItem, loadItem, w.label==="UP"||w.label==="DOWN"?w.label:null, !!w.autoDown);
+      }
+    }
+    state.wires.push(w);
+  });
+}
+
+function clearChannel(deviceId, channelId){
+  if(!confirm("Bu kanal bağlantısı temizlensin mi?")) return;
+  state.wires=state.wires.filter(w => !([w.from,w.to].some(x=>x.id===channelId) || (w.autoDown && [w.from,w.to].some(x=>x.deviceId===deviceId))));
+  refreshChannels();
   render(); markDirty();
 }
 
@@ -394,7 +563,8 @@ function deleteDevice(id){
   state.floors.forEach(f=>f.rooms.forEach(r=>r.devices=r.devices.filter(d=>d.id!==id)));
   state.panels.forEach(p=>p.devices=p.devices.filter(d=>d.id!==id));
   state.collectors.forEach(c=>c.devices=c.devices.filter(d=>d.id!==id));
-  state.wires=state.wires.filter(w=>w.from.id!==id && w.to.id!==id);
+  state.wires=state.wires.filter(w=>![w.from,w.to].some(x=>x.id===id || x.deviceId===id));
+  refreshChannels();
   render(); markDirty();
 }
 
@@ -404,6 +574,7 @@ function deleteBox(id,cls){
   if(cls==="panel") state.panels=state.panels.filter(p=>p.id!==id);
   if(cls==="collector") state.collectors=state.collectors.filter(c=>c.id!==id);
   state.wires=state.wires.filter(w=>w.from.id!==id && w.to.id!==id);
+  refreshChannels();
   render(); markDirty();
 }
 
@@ -419,28 +590,13 @@ function validateProject(){
   devices.forEach(d=>{
     const meta=catalog[d.type];
     if(!meta) return;
-    if((meta.kind==="knx" || meta.kind==="actuator") && !["power_supply"].includes(d.type)){
+    if((meta.kind==="knx" || meta.kind==="actuator") && d.type!=="power_supply"){
       if(!hasKnxConnection(d.id)){
         issues.push({level:"warn", deviceId:d.id, message:`${d.name} KNX Bus hattına bağlı değil. KNX ürünü bus olmadan çalışmaz.`});
       }
     }
     if(meta.kind==="energy" && !hasEnergyConnection(d.id)){
-      issues.push({level:"warn", deviceId:d.id, message:`${d.name} henüz aktüatör çıkışına bağlı değil.`});
-    }
-  });
-
-  const blindUpDown = state.wires.filter(w=>w.type==="energy" && (w.label==="UP" || w.label==="DOWN"));
-  const blindGroups = {};
-  blindUpDown.forEach(w=>{
-    const load = [w.from,w.to].find(x=>x.type==="blind");
-    if(load){
-      blindGroups[load.id] = blindGroups[load.id] || {};
-      blindGroups[load.id][w.label] = true;
-    }
-  });
-  Object.entries(blindGroups).forEach(([id, g])=>{
-    if(!(g.UP && g.DOWN)){
-      issues.push({level:"error", deviceId:id, message:"Perde/Panjur için UP ve DOWN iki ayrı röle/kablo olmalıdır."});
+      issues.push({level:"warn", deviceId:d.id, message:`${d.name} henüz aktüatör kanalına bağlı değil.`});
     }
   });
 
@@ -499,14 +655,6 @@ async function generateGA(){
     list.appendChild(div);
   });
   showTab("ga");
-}
-
-function allDevices(){
-  const arr=[];
-  state.floors.forEach(f=>f.rooms.forEach(r=>r.devices.forEach(d=>arr.push({...d, location:r.name}))));
-  state.panels.forEach(p=>p.devices.forEach(d=>arr.push({...d, location:p.name})));
-  state.collectors.forEach(c=>c.devices.forEach(d=>arr.push({...d, location:c.name})));
-  return arr;
 }
 
 function updateBom(){
@@ -585,10 +733,11 @@ async function downloadPdf(){
   const blob=await res.blob();
   const url=URL.createObjectURL(blob);
   const a=document.createElement("a");
-  a.href=url; a.download="knxdoit_v9_pro_raporu.pdf"; a.click();
+  a.href=url; a.download="knxdoit_v10_releli_rapor.pdf"; a.click();
   URL.revokeObjectURL(url);
 }
 
 renderProductMenus();
 render();
 showProjects();
+applyZoom();

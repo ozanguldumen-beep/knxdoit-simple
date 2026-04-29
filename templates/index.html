@@ -2,14 +2,14 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>KNXdoit v9 Pro</title>
+  <title>KNXdoit v10 Röleli Sistem</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-<div class="app">
+<div class="app" id="appRoot">
   <aside class="sidebar">
     <h1>KNX<span>doit</span></h1>
-    <p>KNX doğrulamalı kablo şeması ve proje aracı</p>
+    <p>Röle bazlı KNX kablo şeması ve doğrulama aracı</p>
 
     <label class="label">Proje Adı</label>
     <input id="projectName" class="project-input" value="Villa Projesi" onchange="updateProjectName()">
@@ -60,20 +60,28 @@
         <h2 id="titleProject">Villa Projesi</h2>
         <span id="status">Kaydedilmedi</span>
       </div>
+      <div class="toolbar">
+        <button class="mini" onclick="zoomOut()">−</button>
+        <span id="zoomLabel">100%</span>
+        <button class="mini" onclick="zoomIn()">+</button>
+        <button class="mini wide" onclick="toggleRightbar()">Sağ Panel</button>
+      </div>
       <div class="validation-pill" id="validationPill">Kontrol bekliyor</div>
       <div class="legend">
-        <span><b class="brown"></b> Enerji 220V</span>
-        <span><b class="green"></b> KNX Bus</span>
-        <span><b class="down"></b> Otomatik DOWN</span>
+        <span><b class="brown"></b> Enerji</span>
+        <span><b class="green"></b> KNX</span>
+        <span><b class="down"></b> DOWN</span>
       </div>
     </header>
 
     <div id="canvas" class="canvas">
-      <svg id="wires"></svg>
+      <div id="zoomLayer" class="zoom-layer">
+        <svg id="wires"></svg>
+      </div>
     </div>
   </main>
 
-  <aside class="rightbar">
+  <aside class="rightbar" id="rightbar">
     <div class="tabs">
       <button class="tab active" onclick="showTab('projects', event)">Projeler</button>
       <button class="tab" onclick="showTab('ga', event)">GA</button>
