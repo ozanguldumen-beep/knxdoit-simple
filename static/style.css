@@ -9,7 +9,7 @@ body {
 
 .app {
     display: grid;
-    grid-template-columns: 260px 1fr 330px;
+    grid-template-columns: 260px 1fr 360px;
     height: 100vh;
 }
 
@@ -46,7 +46,7 @@ button:hover { background: #dbe4ef; }
 button.active { background: #12a064; color: white; }
 
 .help {
-    margin-top: 28px;
+    margin-top: 24px;
     padding: 14px;
     border-radius: 12px;
     background: rgba(255,255,255,0.08);
@@ -73,7 +73,24 @@ header {
 
 header h2 { margin: 0 0 4px; font-size: 22px; }
 #status { font-size: 13px; color: #12a064; }
-.save { width: auto; background: #12a064; color: white; }
+
+.legend {
+    display: flex;
+    gap: 18px;
+    font-size: 13px;
+}
+
+.legend b {
+    display: inline-block;
+    width: 28px;
+    height: 4px;
+    vertical-align: middle;
+    border-radius: 4px;
+    margin-right: 6px;
+}
+
+.brown { background: #c2410c; }
+.green { background: #0f9d58; }
 
 .canvas {
     position: relative;
@@ -96,8 +113,8 @@ header h2 { margin: 0 0 4px; font-size: 22px; }
 .box {
     position: absolute;
     z-index: 2;
-    min-width: 170px;
-    min-height: 120px;
+    min-width: 210px;
+    min-height: 145px;
     background: white;
     border: 2px solid #111827;
     border-radius: 12px;
@@ -107,11 +124,17 @@ header h2 { margin: 0 0 4px; font-size: 22px; }
 }
 
 .box.panel {
+    min-width: 360px;
+    min-height: 190px;
     background: #eef2ff;
     border-color: #2563eb;
 }
 
-.box.selected { outline: 4px solid rgba(18, 160, 100, 0.25); }
+.box.selected,
+.device.selected,
+.channel.selected {
+    outline: 4px solid rgba(18, 160, 100, 0.28);
+}
 
 .box-title {
     font-weight: 800;
@@ -124,8 +147,8 @@ header h2 { margin: 0 0 4px; font-size: 22px; }
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    width: 68px;
-    height: 62px;
+    width: 72px;
+    height: 66px;
     margin: 4px;
     border: 1px solid #d8e0e8;
     border-radius: 10px;
@@ -137,6 +160,70 @@ header h2 { margin: 0 0 4px; font-size: 22px; }
 
 .device:hover { background: #eef6f1; border-color: #12a064; }
 .device-icon { font-size: 22px; line-height: 1; margin-bottom: 4px; }
+
+.modules {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.module {
+    width: 86px;
+    min-height: 115px;
+    background: #f9fafb;
+    border: 1px solid #9ca3af;
+    border-radius: 8px;
+    padding: 6px;
+    font-size: 10px;
+    text-align: center;
+    cursor: default;
+}
+
+.module-title {
+    font-weight: 800;
+    margin-bottom: 6px;
+}
+
+.module-device {
+    font-size: 22px;
+    margin-bottom: 4px;
+}
+
+.channel-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px;
+    margin-top: 5px;
+}
+
+.channel {
+    border: 1px solid #cbd5e1;
+    background: white;
+    border-radius: 5px;
+    padding: 3px 2px;
+    font-size: 9px;
+    cursor: pointer;
+}
+
+.channel.used {
+    background: #fde7d9;
+    border-color: #c2410c;
+}
+
+.channel.locked {
+    background: #e5e7eb;
+    color: #6b7280;
+}
+
+.knx-port {
+    margin-top: 5px;
+    border: 1px solid #0f9d58;
+    background: #e8f7ef;
+    border-radius: 5px;
+    padding: 4px;
+    cursor: pointer;
+}
 
 .rightbar {
     background: white;
@@ -165,3 +252,25 @@ header h2 { margin: 0 0 4px; font-size: 22px; }
 
 .energy-line { stroke: #c2410c; stroke-width: 3; }
 .knx-line { stroke: #0f9d58; stroke-width: 3; }
+
+.context-menu {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    width: 210px;
+    background: white;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+    padding: 8px;
+}
+
+.context-menu button {
+    text-align: left;
+    background: white;
+    margin: 2px 0;
+}
+
+.context-menu button:hover {
+    background: #eef6f1;
+}

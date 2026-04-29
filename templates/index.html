@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>KNXdoit Simple</title>
+    <title>KNXdoit Simple v2</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -18,17 +18,19 @@
         <button onclick="setTool('energy')" id="btn-energy">Enerji Hattı 220V</button>
         <button onclick="setTool('knx')" id="btn-knx">KNX Bus Hattı</button>
 
-        <div class="section-title">Araçlar</div>
+        <div class="section-title">Çıktılar</div>
         <button onclick="generateGA()">Grup Adresi Oluştur</button>
-        <button onclick="clearSelection()">Seçimi Temizle</button>
+        <button onclick="downloadPdf()">PDF Kablo Çıktısı</button>
+        <button onclick="saveProject()">Projeyi Kaydet</button>
         <button onclick="clearCanvas()">Projeyi Temizle</button>
 
         <div class="help">
             <b>Kullanım:</b><br>
             1. Oda ve pano ekle<br>
-            2. Odaya çift tıkla, cihaz ekle<br>
-            3. Enerji veya KNX seç<br>
-            4. İki elemana tıkla, hat çiz
+            2. Odaya sağ tıkla: ürün ekle<br>
+            3. Panoya sağ tıkla: modül ekle<br>
+            4. Enerji/KNX seç<br>
+            5. Cihaz veya kanal seçerek kablo çiz
         </div>
     </aside>
 
@@ -38,7 +40,10 @@
                 <h2>Villa Projesi</h2>
                 <span id="status">Kaydedilmedi</span>
             </div>
-            <button class="save" onclick="saveProject()">Projeyi Kaydet</button>
+            <div class="legend">
+                <span><b class="brown"></b> Enerji 220V</span>
+                <span><b class="green"></b> KNX Bus</span>
+            </div>
         </header>
 
         <div id="canvas" class="canvas">
@@ -52,7 +57,30 @@
 
         <h3>Ürün Listesi</h3>
         <div id="bomList" class="panel-list">Henüz ürün yok.</div>
+
+        <h3>Pano Kanal Listesi</h3>
+        <div id="channelList" class="panel-list">Henüz kanal yok.</div>
     </aside>
+</div>
+
+<div id="roomMenu" class="context-menu">
+    <button onclick="addDeviceToSelectedRoom('lamp')">💡 Lamba</button>
+    <button onclick="addDeviceToSelectedRoom('dimmer')">🔆 Dimmer</button>
+    <button onclick="addDeviceToSelectedRoom('blind')">🪟 Perde/Panjur</button>
+    <button onclick="addDeviceToSelectedRoom('valve')">🔥 Vana</button>
+    <button onclick="addDeviceToSelectedRoom('thermostat')">🌡️ KNX Termostat</button>
+    <button onclick="addDeviceToSelectedRoom('switch')">🔘 KNX Anahtar</button>
+    <button onclick="addDeviceToSelectedRoom('sensor')">📡 KNX Sensör</button>
+    <button onclick="addDeviceToSelectedRoom('thermo_switch')">🌡️🔘 Termostatlı Anahtar</button>
+</div>
+
+<div id="panelMenu" class="context-menu">
+    <button onclick="addModuleToSelectedPanel('power')">⚡ Power Supply</button>
+    <button onclick="addModuleToSelectedPanel('router')">🌐 IP Router</button>
+    <button onclick="addModuleToSelectedPanel('switch_actuator_6')">🔌 Switch Aktüatör 6K</button>
+    <button onclick="addModuleToSelectedPanel('switch_actuator_12')">🔌 Switch Aktüatör 12K</button>
+    <button onclick="addModuleToSelectedPanel('dimmer_actuator_4')">🔆 Dimmer Aktüatör 4K</button>
+    <button onclick="addModuleToSelectedPanel('blind_actuator_4')">🪟 Jalüzi Aktüatör 4K</button>
 </div>
 
 <script src="/static/app.js"></script>
