@@ -1,96 +1,41 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>KNXdoit Simple v4</title>
-    <link rel="stylesheet" href="/static/style.css">
+<meta charset="UTF-8">
+<title>KNXdoit v5</title>
+<link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-<div class="app">
-    <aside class="sidebar">
-        <h1>KNX<span>doit</span></h1>
-        <p>Kolay KNX kablo çizim ve grup adres aracı</p>
 
-        <button onclick="addRoom()">+ Oda Ekle</button>
-        <button onclick="addPanel()">+ Pano Ekle</button>
-        <button onclick="addCollector()">+ Kollektör Dolabı</button>
-
-        <div class="section-title">Hatlar</div>
-        <button onclick="setTool('energy')" id="btn-energy">Enerji Hattı 220V</button>
-        <button onclick="setTool('knx')" id="btn-knx">KNX Bus T Bağlantı</button>
-
-        <div class="section-title">İşlemler</div>
-        <button onclick="setTool('delete')" id="btn-delete">Silme Modu</button>
-
-        <div class="section-title">Çıktılar</div>
-        <button onclick="generateGA()">Grup Adresi Oluştur</button>
-        <button onclick="downloadPdf()">PDF Kablo Çıktısı</button>
-        <button onclick="saveProject()">Projeyi Kaydet</button>
-        <button onclick="clearCanvas()">Projeyi Temizle</button>
-
-        <div class="help">
-            <b>Kullanım:</b><br>
-            1. Oda ve pano ekle<br>
-            2. Odaya sağ tıkla: ürün ekle<br>
-            3. Panoya sağ tıkla: modül ekle<br>
-            4. Kollektöre sağ tıkla: vana ekle<br>
-            4. Enerji/KNX seç<br>
-            5. Cihaz veya kanal seçerek kablo çiz
-        </div>
-    </aside>
-
-    <main class="workspace">
-        <header>
-            <div>
-                <h2>Villa Projesi</h2>
-                <span id="status">Kaydedilmedi</span>
-            </div>
-            <div class="legend">
-                <span><b class="brown"></b> Enerji 220V</span>
-                <span><b class="green"></b> KNX Bus</span>
-                <span><b class="down"></b> Otomatik DOWN</span>
-            </div>
-        </header>
-
-        <div id="canvas" class="canvas">
-            <svg id="wires"></svg>
-        </div>
-    </main>
-
-    <aside class="rightbar">
-        <h3>Grup Adresleri</h3>
-        <div id="gaList" class="panel-list">Henüz oluşturulmadı.</div>
-
-        <h3>Ürün Listesi</h3>
-        <div id="bomList" class="panel-list">Henüz ürün yok.</div>
-
-        <h3>Pano Kanal Listesi</h3>
-        <div id="channelList" class="panel-list">Henüz kanal yok.</div>
-    </aside>
+<div class="top">
+<input id="projectName" value="Villa Projesi">
+<button onclick="addFloor()">+ Kat</button>
+<button onclick="addRoom()">+ Oda</button>
 </div>
 
-<div id="roomMenu" class="context-menu">
-    <button onclick="addDeviceToSelectedRoom('lamp')">💡 Lamba</button>
-    <button onclick="addDeviceToSelectedRoom('dimmer')">🔆 Dimmer</button>
-    <button onclick="addDeviceToSelectedRoom('blind')">🪟 Perde/Panjur</button>
-    <button onclick="addDeviceToSelectedRoom('valve')">🔥 Vana</button>
-    <button onclick="addDeviceToSelectedRoom('thermostat')">🌡️ KNX Termostat</button>
-    <button onclick="addDeviceToSelectedRoom('switch')">🔘 KNX Anahtar</button>
-    <button onclick="addDeviceToSelectedRoom('sensor')">📡 KNX Sensör</button>
-    <button onclick="addDeviceToSelectedRoom('thermo_switch')">🌡️🔘 Termostatlı Anahtar</button>
+<div class="layout">
+<div class="left">
+<h3>KNX Ürünler</h3>
+<button onclick="addDevice('switch')">KNX Anahtar</button>
+<button onclick="addDevice('thermostat')">KNX Termostat</button>
+<button onclick="addDevice('sensor')">KNX Sensör</button>
+
+<h3>Aktüatörler</h3>
+<button onclick="addDevice('actuator')">Switch Actuator</button>
+<button onclick="addDevice('dimmer')">Dimmer Actuator</button>
+
+<h3>Enerji</h3>
+<button onclick="addDevice('lamp')">Lamba</button>
+<button onclick="addDevice('blind')">Perde</button>
 </div>
 
-<div id="panelMenu" class="context-menu">
-    <button onclick="addModuleToSelectedPanel('power')">⚡ Power Supply</button>
-    <button onclick="addModuleToSelectedPanel('router')">🌐 IP Router</button>
-    <button onclick="addModuleToSelectedPanel('switch_actuator_6')">🔌 Switch Actuator 6K</button>
-    <button onclick="addModuleToSelectedPanel('switch_actuator_12')">🔌 Switch Actuator 12K</button>
-    <button onclick="addModuleToSelectedPanel('dimmer_actuator_4')">🔆 Dimmer Actuator 4K</button>
-    <button onclick="addModuleToSelectedPanel('blind_actuator_4')">🪟 Blind Actuator 4K</button>
-</div>
+<div id="canvas" class="canvas"></div>
 
-<div id="collectorMenu" class="context-menu">
-    <button onclick="addValveToSelectedCollector()">🔥 Vana Ekle</button>
+<div class="right">
+<h3>Projeler</h3>
+<button onclick="save()">Kaydet</button>
+<button onclick="load()">Yükle</button>
+</div>
 </div>
 
 <script src="/static/app.js"></script>
