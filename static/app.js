@@ -56,12 +56,16 @@ function addRoom(){
   const floor = state.floors[state.activeFloor];
   const name = prompt("Oda adı:", "Salon");
   if(!name) return;
-  floor.rooms.push({id:uid("room"), name, x:80+floor.rooms.length*30, y:90+floor.rooms.length*30, devices:[]});
+  const n = floor.rooms.length;
+  const col = n % 2;
+  const row = Math.floor(n / 2);
+  floor.rooms.push({id:uid("room"), name, x:80 + col*820, y:90 + row*260, devices:[]});
   render(); markDirty();
 }
 
 function addCollector(){
-  state.collectors.push({id:uid("collector"), name:"Yerden Isıtma Kollektörü", x:760, y:360, devices:[
+  const n = state.collectors.length;
+  state.collectors.push({id:uid("collector"), name:"Yerden Isıtma Kollektörü", x:760, y:360+n*170, devices:[
     {id:uid("dev"), type:"valve", name:"Kollektör Vana 1"},
     {id:uid("dev"), type:"valve", name:"Kollektör Vana 2"}
   ]});
@@ -73,17 +77,14 @@ function addDevice(type){
   if(!meta) return;
   if(meta.kind==="collector"){ addCollector(); return; }
 
-  if(meta.kind==="actuator" || type==="ip_router" || type==="power_supply" || type==="line_coupler"){
+  if(meta.kind==="actuator" || ["ip_router","power_supply","line_coupler"].includes(type)){
     if(!state.panels.length){
       state.panels.push({id:uid("panel"), name:"Ana Pano", x:520, y:350, devices:[]});
     }
     state.panels[0].devices.push({id:uid("dev"), type, name:meta.name});
   } else {
     const floor = state.floors[state.activeFloor];
-    if(!floor.rooms.length){
-      alert("Önce oda eklemelisin.");
-      return;
-    }
+    if(!floor.rooms.length){ alert("Önce oda eklemelisin."); return; }
     floor.rooms[floor.rooms.length-1].devices.push({id:uid("dev"), type, name:meta.name});
   }
   render(); markDirty();
@@ -188,14 +189,22 @@ function clickItem(item, el){
   clearSel(); render(); markDirty();
 }
 
+
+function hasEnergyConnection(deviceId){
+  return state.wires.some(w => w.type === "energy" && (w.from.id === deviceId || w.to.id === deviceId));
+}
+
 function allowed(a,b,t){
   const energyTypes=["lamp","dim_lamp","blind","aircon","boiler","valve","door","motor_valve","onoff"];
   const knxTypes=["knx_switch","knx_thermostat","knx_sensor","ip_router","power_supply","knx_thermo_switch","line_coupler","binary_input","switch_actuator","dimmer_actuator","blind_actuator","rgbw_actuator"];
-  if(t==="knx"){
-    if(energyTypes.includes(a.type)||energyTypes.includes(b.type)){ alert("Enerji ürünü KNX hattına bağlanamaz."); return false; }
-  }
-  if(t==="energy"){
-    if(knxTypes.includes(a.type)&&knxTypes.includes(b.type)){ alert("Enerji hattı iki KNX ürün arasında çizilemez."); return false; }
+  if(t==="knx" && (energyTypes.includes(a.type)||energyTypes.includes(b.type))){ alert("Enerji ürünü KNX hattına bağlanamaz."); return false; }
+  if(t==="energy" && knxTypes.includes(a.type)&&knxTypes.includes(b.type)){ alert("Enerji hattı iki KNX ürün arasında çizilemez."); return false; }
+  const energyA = energyTypes.includes(a.type);
+  const energyB = energyTypes.includes(b.type);
+  const energyItem = energyA ? a : (energyB ? b : null);
+  if(t==="energy" && energyItem && hasEnergyConnection(energyItem.id)){
+    alert("Bu enerji ürününe zaten bir röle/kablo bağlandı. İkinci enerji kablosu bağlanamaz.");
+    return false;
   }
   return true;
 }
@@ -249,7 +258,7 @@ function drawWires(){
 function makeDraggable(el,obj){
   let drag=false, ox=0, oy=0;
   el.onmousedown=e=>{
-    if(e.target.closest(".device")) return;
+    if(e.target.closest(".device") || e.target.closest("button") || e.target.closest("input")) return;
     drag=true; ox=e.offsetX; oy=e.offsetY;
   };
   document.onmousemove=e=>{
@@ -372,7 +381,7 @@ async function downloadPdf(){
   const blob=await res.blob();
   const url=URL.createObjectURL(blob);
   const a=document.createElement("a");
-  a.href=url; a.download="knxdoit_v5_pro_kablo_raporu.pdf"; a.click();
+  a.href=url; a.download="knxdoit_v5_1_elektrikci_semasi.pdf"; a.click();
   URL.revokeObjectURL(url);
 }
 

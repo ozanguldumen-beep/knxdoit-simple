@@ -1,3 +1,3 @@
-# KNXdoit v5 Pro
+# KNXdoit v6 Ready
 
-V4 görsel arayüz + v5 ürün/kat/proje sistemi.
+Collapsible menu, improved room placement, Turkish PDF fixes, basic ABB-style KNX bus schematic.

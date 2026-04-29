@@ -2,22 +2,38 @@ from io import BytesIO
 from flask import Flask, render_template, request, jsonify, send_file
 from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.pdfgen import canvas
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+import os
 
 app = Flask(__name__)
 
+FONT_NAME = "Helvetica"
+FONT_BOLD = "Helvetica-Bold"
+try:
+    font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+    bold_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+    if os.path.exists(font_path):
+        pdfmetrics.registerFont(TTFont("DejaVuSans", font_path))
+        FONT_NAME = "DejaVuSans"
+    if os.path.exists(bold_path):
+        pdfmetrics.registerFont(TTFont("DejaVuSans-Bold", bold_path))
+        FONT_BOLD = "DejaVuSans-Bold"
+except Exception:
+    pass
+
 DPT_RULES = {
-    "knx_switch": [{"name": "Buton 1", "dpt": "DPST-1-1"}, {"name": "Buton 2", "dpt": "DPST-1-1"}],
-    "knx_thermostat": [{"name": "Sıcaklık", "dpt": "DPST-9-1"}, {"name": "Set Değeri", "dpt": "DPST-9-1"}],
-    "knx_sensor": [{"name": "Hareket", "dpt": "DPST-1-1"}, {"name": "Işık", "dpt": "DPST-9-4"}],
-    "knx_thermo_switch": [{"name": "Sıcaklık", "dpt": "DPST-9-1"}, {"name": "Buton", "dpt": "DPST-1-1"}],
-    "lamp": [{"name": "Aç/Kapa", "dpt": "DPST-1-1"}, {"name": "Geri Bildirim", "dpt": "DPST-1-1"}],
-    "dim_lamp": [{"name": "On/Off", "dpt": "DPST-1-1"}, {"name": "Parlaklık", "dpt": "DPST-5-1"}],
-    "blind": [{"name": "Up/Down", "dpt": "DPST-1-8"}, {"name": "Stop", "dpt": "DPST-1-7"}],
-    "valve": [{"name": "Aç/Kapa", "dpt": "DPST-1-1"}],
-    "motor_valve": [{"name": "Motorlu Vana", "dpt": "DPST-1-1"}],
-    "onoff": [{"name": "On/Off", "dpt": "DPST-1-1"}],
+    "knx_switch": [("Buton 1", "DPST-1-1"), ("Buton 2", "DPST-1-1")],
+    "knx_thermostat": [("Sıcaklık", "DPST-9-1"), ("Set Değeri", "DPST-9-1")],
+    "knx_sensor": [("Hareket", "DPST-1-1"), ("Işık", "DPST-9-4")],
+    "knx_thermo_switch": [("Sıcaklık", "DPST-9-1"), ("Buton", "DPST-1-1")],
+    "lamp": [("Aç/Kapa", "DPST-1-1"), ("Geri Bildirim", "DPST-1-1")],
+    "dim_lamp": [("On/Off", "DPST-1-1"), ("Parlaklık", "DPST-5-1")],
+    "blind": [("Up/Down", "DPST-1-8"), ("Stop", "DPST-1-7")],
+    "valve": [("Aç/Kapa", "DPST-1-1")],
+    "motor_valve": [("Motorlu Vana", "DPST-1-1")],
+    "onoff": [("On/Off", "DPST-1-1")],
 }
 
 @app.route("/")
@@ -37,18 +53,86 @@ def group_addresses():
                 dtype = dev.get("type")
                 physical = f"1.{floor_index}.{phys}"
                 phys += 1
-                for rule in DPT_RULES.get(dtype, []):
+                for fname, dpt in DPT_RULES.get(dtype, []):
                     result.append({
                         "physical": physical,
                         "address": f"{floor_index}/{room_index}/{sub}",
                         "floor": floor.get("name", f"Kat {floor_index}"),
                         "room": room.get("name", "Oda"),
                         "device": dev.get("name", dtype),
-                        "function": rule["name"],
-                        "dpt": rule["dpt"]
+                        "function": fname,
+                        "dpt": dpt
                     })
                     sub += 1
     return jsonify(result)
+
+def draw_device(c, x, y, label, icon=""):
+    c.setStrokeColor(colors.black)
+    c.setFillColor(colors.white)
+    c.roundRect(x-24, y-18, 48, 36, 5, stroke=1, fill=1)
+    c.setFillColor(colors.black)
+    c.setFont(FONT_BOLD, 6)
+    txt = label[:18]
+    c.drawCentredString(x, y-28, txt)
+    c.setFont(FONT_NAME, 11)
+    c.drawCentredString(x, y-4, icon or "KNX")
+
+def draw_pdf_schematic(c, data, y_start):
+    width, height = landscape(A4)
+    c.setFont(FONT_BOLD, 14)
+    c.drawString(30, y_start, "1. ABB tarzı KNX Bus Şeması")
+    y = y_start - 35
+
+    floors = data.get("floors", [])
+    panels = data.get("panels", [])
+    collectors = data.get("collectors", [])
+
+    bus_left = 85
+    bus_right = width - 80
+
+    # Main line
+    c.setStrokeColor(colors.HexColor("#0f9d58"))
+    c.setLineWidth(3)
+
+    rows = []
+    for f in floors:
+        devices = []
+        for r in f.get("rooms", []):
+            for d in r.get("devices", []):
+                if d.get("type", "").startswith("knx") or d.get("type") in ["ip_router", "power_supply", "line_coupler", "binary_input", "switch_actuator", "dimmer_actuator", "blind_actuator", "rgbw_actuator"]:
+                    devices.append((r.get("name","Oda"), d.get("name","Cihaz"), d.get("type","")))
+        rows.append((f.get("name","Kat"), devices))
+
+    if panels:
+        pdev = []
+        for p in panels:
+            for d in p.get("devices", []):
+                pdev.append((p.get("name","Pano"), d.get("name","Modül"), d.get("type","")))
+        rows.insert(0, ("Pano / Ana Hat", pdev))
+
+    max_rows = min(len(rows), 4)
+    for idx in range(max_rows):
+        row_name, devs = rows[idx]
+        row_y = y - idx * 88
+        c.setStrokeColor(colors.HexColor("#0f9d58"))
+        c.line(bus_left, row_y, bus_right, row_y)
+        c.setFillColor(colors.HexColor("#0f9d58"))
+        c.setFont(FONT_BOLD, 8)
+        c.drawString(35, row_y-3, row_name)
+        c.drawString(bus_left, row_y+8, "KNX BUS")
+
+        shown = devs[:8]
+        if not shown:
+            shown = [(row_name, "Boş hat", "")]
+        step = (bus_right - bus_left) / (len(shown)+1)
+        for i, (_, name, typ) in enumerate(shown, start=1):
+            x = bus_left + step*i
+            c.setStrokeColor(colors.HexColor("#0f9d58"))
+            c.line(x, row_y, x, row_y+38)
+            icon = "▣" if "switch" in typ else "T" if "thermostat" in typ else "S" if "sensor" in typ else "A" if "actuator" in typ else "P"
+            draw_device(c, x, row_y+55, name, icon)
+
+    return y - max_rows * 88 - 10
 
 @app.route("/api/pdf", methods=["POST"])
 def pdf():
@@ -57,40 +141,52 @@ def pdf():
     project_name = data.get("projectName", "KNXdoit Projesi")
 
     buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=landscape(A4), rightMargin=20, leftMargin=20, topMargin=20, bottomMargin=20)
-    styles = getSampleStyleSheet()
-    story = []
+    c = canvas.Canvas(buffer, pagesize=landscape(A4))
+    width, height = landscape(A4)
 
-    story.append(Paragraph(f"{project_name} - Elektrikçi Kablo Bağlantı Raporu", styles["Title"]))
-    story.append(Paragraph("Kahverengi: 220V enerji hattı | Yeşil: KNX Bus hattı | Perde/Panjur: UP ve DOWN iki ayrı röle kanalıdır.", styles["Normal"]))
-    story.append(Spacer(1, 14))
+    c.setFont(FONT_BOLD, 18)
+    c.drawString(30, height-38, f"{project_name} - Elektrikçi Kablo ve KNX Topoloji Raporu")
+    c.setFont(FONT_NAME, 9)
+    c.drawString(30, height-58, "Kahverengi: 220V enerji hattı | Yeşil: KNX Bus hattı | Perde/Panjur: UP ve DOWN iki ayrı röle kanalıdır.")
+    c.drawString(30, height-73, "Not: KNX Bus ana hat olarak düşünülür; cihazlar bu hatta T bağlantı ile bağlanır.")
 
-    rows = [["No", "Hat", "Başlangıç", "Bitiş", "Etiket", "Not"]]
-    for i, w in enumerate(wires, start=1):
-        rows.append([
-            i,
+    next_y = draw_pdf_schematic(c, data, height-105)
+
+    c.setFont(FONT_BOLD, 14)
+    c.setFillColor(colors.black)
+    c.drawString(30, max(next_y, 170), "2. Kablo Bağlantı Listesi")
+
+    y = max(next_y, 170) - 22
+    c.setFont(FONT_BOLD, 7)
+    headers = ["No", "Hat", "Başlangıç", "Bitiş", "Etiket", "Not"]
+    xs = [30, 55, 125, 300, 475, 570]
+    for x, h in zip(xs, headers):
+        c.drawString(x, y, h)
+    y -= 10
+    c.setFont(FONT_NAME, 6.5)
+
+    for i, w in enumerate(wires[:28], start=1):
+        if y < 28:
+            c.showPage()
+            y = height-40
+            c.setFont(FONT_NAME, 6.5)
+        values = [
+            str(i),
             "Enerji 220V" if w.get("type") == "energy" else "KNX Bus",
-            w.get("fromLabel", "-"),
-            w.get("toLabel", "-"),
-            w.get("label", "-"),
-            "DOWN otomatik" if w.get("autoDown") else ("T bağlantı" if w.get("type") == "knx" else "Röle bağlantısı")
-        ])
+            w.get("fromLabel","-")[:32],
+            w.get("toLabel","-")[:32],
+            w.get("label","-")[:20],
+            "DOWN otomatik" if w.get("autoDown") else ("T bağlantı" if w.get("type")=="knx" else "Röle bağlantısı")
+        ]
+        for x, val in zip(xs, values):
+            c.drawString(x, y, val)
+        y -= 10
 
-    table = Table(rows, colWidths=[35, 85, 190, 190, 120, 130])
-    table.setStyle(TableStyle([
-        ("GRID", (0,0), (-1,-1), 0.35, colors.grey),
-        ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#102033")),
-        ("TEXTCOLOR", (0,0), (-1,0), colors.white),
-        ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
-        ("FONTSIZE", (0,0), (-1,-1), 8),
-        ("VALIGN", (0,0), (-1,-1), "TOP"),
-    ]))
-    story.append(table)
-    story.append(Spacer(1, 14))
-    story.append(Paragraph("Not: KNX Bus yeşil ana hat olarak düşünülmeli, cihazlar bu hatta T bağlantı ile bağlanmalıdır.", styles["Normal"]))
-    doc.build(story)
+    c.setFont(FONT_NAME, 8)
+    c.drawString(30, 16, "Bu rapor saha elektrikçisi için hazırlanmıştır. KNX programlama/grup adresleri ayrıca kontrol edilmelidir.")
+    c.save()
     buffer.seek(0)
-    return send_file(buffer, as_attachment=True, download_name="knxdoit_v5_pro_kablo_raporu.pdf", mimetype="application/pdf")
+    return send_file(buffer, as_attachment=True, download_name="knxdoit_v5_1_elektrikci_semasi.pdf", mimetype="application/pdf")
 
 if __name__ == "__main__":
     app.run(debug=True)

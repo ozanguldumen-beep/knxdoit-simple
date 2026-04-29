@@ -7,7 +7,8 @@ body { margin:0; font-family:Arial,sans-serif; color:#102033; background:#f4f7f9
 .sidebar p { color:#cbd5e1; font-size:13px; margin-bottom:18px; }
 .label { font-size:12px; color:#93a4b8; display:block; margin-bottom:6px; }
 .project-input { width:100%; padding:10px; border-radius:10px; border:0; margin-bottom:12px; font-weight:700; }
-.section-title { margin:18px 0 8px; color:#93a4b8; font-size:12px; text-transform:uppercase; }
+details { border-top:1px solid rgba(255,255,255,.12); padding:10px 0; }
+summary { cursor:pointer; font-weight:800; color:#dbe4ef; margin-bottom:8px; }
 button { width:100%; border:0; border-radius:10px; padding:10px 12px; margin:4px 0; font-weight:700; cursor:pointer; background:#e9eef5; color:#102033; text-align:left; }
 button:hover { background:#dbe4ef; }
 button.active { background:#12a064; color:white; }
@@ -33,7 +34,6 @@ header h2 { margin:0 0 4px; font-size:22px; }
 .device { display:inline-flex; flex-direction:column; align-items:center; justify-content:center; width:92px; min-height:78px; border:1px solid #d8e0e8; border-radius:12px; background:#f8fafc; cursor:pointer; font-size:12px; text-align:center; padding:6px; }
 .device:hover { background:#eef6f1; border-color:#12a064; }
 .device.selected { outline:4px solid rgba(18,160,100,.28); }
-.device.connected { background:#fff7ed; border-color:#c2410c; }
 .device-icon { font-size:24px; line-height:1; margin-bottom:4px; }
 .rightbar { background:white; border-left:1px solid #d8e0e8; padding:18px; overflow-y:auto; }
 .rightbar h3 { margin:12px 0; }
@@ -46,3 +46,15 @@ header h2 { margin:0 0 4px; font-size:22px; }
 .auto-down-line { stroke:#c2410c; stroke-width:3.5; stroke-dasharray:8 5; cursor:pointer; }
 .bus-bar { position:absolute; left:30px; right:30px; height:6px; background:#0f9d58; border-radius:8px; bottom:28px; z-index:1; }
 .bus-label { position:absolute; left:35px; bottom:42px; font-size:12px; font-weight:800; color:#0f9d58; z-index:1; }
+
+.v6-note {
+  margin-top:16px;
+  padding:12px;
+  border-radius:12px;
+  background:rgba(255,255,255,.08);
+  color:#dbe4ef;
+  font-size:12px;
+  line-height:1.5;
+}
+details[open] summary { color:#12a064; }
+summary::marker { color:#12a064; }
