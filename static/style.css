@@ -110,6 +110,15 @@ header h2 { margin: 0 0 4px; font-size: 22px; }
     z-index: 1;
 }
 
+.wire-label {
+    font-size: 11px;
+    font-weight: 700;
+    fill: #102033;
+    paint-order: stroke;
+    stroke: white;
+    stroke-width: 4px;
+}
+
 .box {
     position: absolute;
     z-index: 2;
@@ -124,15 +133,16 @@ header h2 { margin: 0 0 4px; font-size: 22px; }
 }
 
 .box.panel {
-    min-width: 360px;
-    min-height: 190px;
+    min-width: 410px;
+    min-height: 210px;
     background: #eef2ff;
     border-color: #2563eb;
 }
 
 .box.selected,
 .device.selected,
-.channel.selected {
+.channel.selected,
+.knx-port.selected {
     outline: 4px solid rgba(18, 160, 100, 0.28);
 }
 
@@ -142,23 +152,31 @@ header h2 { margin: 0 0 4px; font-size: 22px; }
     margin-bottom: 10px;
 }
 
+.device-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: flex-start;
+}
+
 .device {
     display: inline-flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    width: 72px;
-    height: 66px;
-    margin: 4px;
+    width: 82px;
+    min-height: 72px;
     border: 1px solid #d8e0e8;
     border-radius: 10px;
     background: #f8fafc;
     cursor: pointer;
     font-size: 12px;
     text-align: center;
+    padding: 6px;
 }
 
 .device:hover { background: #eef6f1; border-color: #12a064; }
+.device.connected { background: #fff7ed; border-color: #c2410c; }
 .device-icon { font-size: 22px; line-height: 1; margin-bottom: 4px; }
 
 .modules {
@@ -169,8 +187,8 @@ header h2 { margin: 0 0 4px; font-size: 22px; }
 }
 
 .module {
-    width: 86px;
-    min-height: 115px;
+    width: 92px;
+    min-height: 122px;
     background: #f9fafb;
     border: 1px solid #9ca3af;
     border-radius: 8px;
@@ -250,14 +268,20 @@ header h2 { margin: 0 0 4px; font-size: 22px; }
 
 .row:last-child { border-bottom: 0; }
 
-.energy-line { stroke: #c2410c; stroke-width: 3; }
-.knx-line { stroke: #0f9d58; stroke-width: 3; }
+.energy-line { stroke: #c2410c; stroke-width: 3.5; }
+.knx-line { stroke: #0f9d58; stroke-width: 3.5; }
+
+.auto-down-line {
+    stroke: #c2410c;
+    stroke-width: 3.5;
+    stroke-dasharray: 8 5;
+}
 
 .context-menu {
     display: none;
     position: fixed;
     z-index: 9999;
-    width: 210px;
+    width: 230px;
     background: white;
     border: 1px solid #cbd5e1;
     border-radius: 12px;

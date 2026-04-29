@@ -12,10 +12,10 @@ let roomCounter = 0;
 let panelCounter = 0;
 
 const deviceTypes = {
-    lamp: { icon: "💡", label: "Lamba", energy: true },
-    dimmer: { icon: "🔆", label: "Dimmer", energy: true },
-    blind: { icon: "🪟", label: "Perde/Panjur", energy: true },
-    valve: { icon: "🔥", label: "Vana", energy: true },
+    lamp: { icon: "💡", label: "Lamba", energy: true, singleEnergyConnection: true },
+    dimmer: { icon: "🔆", label: "Dimmer", energy: true, singleEnergyConnection: true },
+    blind: { icon: "🪟", label: "Perde/Panjur", energy: true, singleEnergyConnection: true },
+    valve: { icon: "🔥", label: "Vana", energy: true, singleEnergyConnection: true },
     thermostat: { icon: "🌡️", label: "KNX Termostat", energy: false },
     switch: { icon: "🔘", label: "KNX Anahtar", energy: false },
     sensor: { icon: "📡", label: "KNX Sensör", energy: false },
@@ -25,10 +25,10 @@ const deviceTypes = {
 const moduleTypes = {
     power: { icon: "⚡", label: "Power Supply", channels: 0, channelType: "knx" },
     router: { icon: "🌐", label: "IP Router", channels: 0, channelType: "knx" },
-    switch_actuator_6: { icon: "🔌", label: "Switch 6K", channels: 6, channelType: "switch" },
-    switch_actuator_12: { icon: "🔌", label: "Switch 12K", channels: 12, channelType: "switch" },
-    dimmer_actuator_4: { icon: "🔆", label: "Dimmer 4K", channels: 4, channelType: "dimmer" },
-    blind_actuator_4: { icon: "🪟", label: "Jalüzi 4K", channels: 4, channelType: "blind" }
+    switch_actuator_6: { icon: "🔌", label: "Switch Actuator 6K", channels: 6, channelType: "switch" },
+    switch_actuator_12: { icon: "🔌", label: "Switch Actuator 12K", channels: 12, channelType: "switch" },
+    dimmer_actuator_4: { icon: "🔆", label: "Dimmer Actuator 4K", channels: 4, channelType: "dimmer" },
+    blind_actuator_4: { icon: "🪟", label: "Blind Actuator 4K", channels: 4, channelType: "blind" }
 };
 
 function uid(prefix) {
@@ -119,7 +119,8 @@ function addModuleToSelectedPanel(type) {
             no: i,
             label: "K" + i,
             usedBy: null,
-            locked: false
+            locked: false,
+            direction: null
         });
     }
 
@@ -139,12 +140,13 @@ function render() {
         box.style.left = room.x + "px";
         box.style.top = room.y + "px";
         box.dataset.id = room.id;
-        box.innerHTML = `<div class="box-title">${room.name}</div>`;
+        box.innerHTML = `<div class="box-title">${room.name}</div><div class="device-wrap"></div>`;
+        const wrap = box.querySelector(".device-wrap");
 
         room.devices.forEach(dev => {
             const meta = deviceTypes[dev.type];
             const d = document.createElement("div");
-            d.className = "device";
+            d.className = "device" + (hasEnergyConnection(dev.id) ? " connected" : "");
             d.dataset.deviceId = dev.id;
             d.dataset.label = room.name + " - " + dev.name;
             d.innerHTML = `<div class="device-icon">${meta.icon}</div><div>${dev.name}</div>`;
@@ -152,7 +154,7 @@ function render() {
                 e.stopPropagation();
                 handleItemClick({ kind: "device", parentId: room.id, deviceId: dev.id, device: dev, label: room.name + " - " + dev.name }, d);
             };
-            box.appendChild(d);
+            wrap.appendChild(d);
         });
 
         box.oncontextmenu = (e) => {
@@ -197,11 +199,12 @@ function render() {
                 const c = document.createElement("div");
                 c.className = "channel" + (ch.usedBy ? " used" : "") + (ch.locked ? " locked" : "");
                 c.dataset.channelId = ch.id;
-                c.innerText = ch.locked ? ch.label + " 🔒" : ch.label;
+                c.innerText = ch.locked ? ch.label + " 🔒" : (ch.direction ? ch.label + " " + ch.direction : ch.label);
+                c.title = ch.usedBy || "";
                 c.onclick = (e) => {
                     e.stopPropagation();
                     if (ch.locked) {
-                        alert("Bu kanal perde/panjur için otomatik bloke edildi.");
+                        alert("Bu kanal perde/panjur DOWN için otomatik bloke edildi.");
                         return;
                     }
                     handleItemClick({
@@ -279,27 +282,44 @@ function handleItemClick(item, element) {
         return;
     }
 
-    const wire = {
-        id: uid("wire"),
-        from: selectedItem.item,
-        to: item,
-        type: currentTool,
-        fromLabel: selectedItem.item.label,
-        toLabel: item.label
-    };
-
+    const wire = createWire(selectedItem.item, item, currentTool, false);
     state.wires.push(wire);
     applyChannelUsage(wire);
+
+    if (currentTool === "energy") {
+        createBlindDownWireIfNeeded(wire);
+    }
 
     clearSelection();
     render();
     markDirty();
 }
 
+function createWire(from, to, type, autoDown) {
+    return {
+        id: uid("wire"),
+        from,
+        to,
+        type,
+        fromLabel: from.label,
+        toLabel: to.label,
+        label: buildWireLabel(from, to, type, autoDown),
+        autoDown: !!autoDown
+    };
+}
+
+function buildWireLabel(a, b, type, autoDown) {
+    const deviceItem = [a, b].find(x => x.kind === "device");
+    const channelItem = [a, b].find(x => x.kind === "channel");
+    if (type === "knx") return "KNX BUS";
+    if (!deviceItem || !channelItem) return "220V";
+    if (deviceItem.device.type === "blind") return autoDown ? "DOWN" : "UP";
+    return channelItem.channel.label + " → " + deviceItem.device.name;
+}
+
 function isConnectionAllowed(a, b, type) {
     const deviceItem = [a, b].find(x => x.kind === "device");
     const channelItem = [a, b].find(x => x.kind === "channel");
-    const knxItem = [a, b].find(x => x.kind === "knxport" || (x.kind === "device" && deviceTypes[x.device?.type]?.energy === false));
 
     if (type === "energy") {
         if (!channelItem) {
@@ -311,41 +331,119 @@ function isConnectionAllowed(a, b, type) {
             return false;
         }
 
-        const channelType = channelItem.module ? moduleTypes[channelItem.module.type].channelType : null;
+        if (hasEnergyConnection(deviceItem.device.id)) {
+            alert("Bu cihaza zaten bir enerji rölesi bağlandı. Aynı lambaya/cihaza ikinci röle kablosu bağlanamaz.");
+            return false;
+        }
+
+        if (channelItem.channel.usedBy || channelItem.channel.locked) {
+            alert("Bu röle kanalı dolu veya kilitli.");
+            return false;
+        }
+
+        const channelType = moduleTypes[channelItem.module.type].channelType;
         const devType = deviceItem.device.type;
 
         if (devType === "dimmer" && channelType !== "dimmer") {
-            alert("Dimmer sadece Dimmer Aktüatör kanalına bağlanır.");
+            alert("Dimmer sadece Dimmer Actuator kanalına bağlanır.");
             return false;
         }
 
         if (devType === "blind" && channelType !== "blind") {
-            alert("Perde/Panjur sadece Jalüzi Aktüatör kanalına bağlanır.");
+            alert("Perde/Panjur sadece Blind Actuator kanalına bağlanır.");
             return false;
         }
 
         if (["lamp", "valve"].includes(devType) && channelType !== "switch") {
-            alert("Lamba/Vana sadece Switch Aktüatör kanalına bağlanır.");
+            alert("Lamba/Vana sadece Switch Actuator kanalına bağlanır.");
             return false;
+        }
+
+        if (devType === "blind" && !getNextChannel(channelItem)) {
+            alert("Perde/Panjur için seçilen kanalın yanında DOWN için boş ikinci kanal olmalı.");
+            return false;
+        }
+
+        if (devType === "blind") {
+            const next = getNextChannel(channelItem);
+            if (next.usedBy || next.locked) {
+                alert("Perde/Panjur DOWN için kullanılacak bir sonraki kanal boş olmalı.");
+                return false;
+            }
         }
     }
 
     if (type === "knx") {
-        const hasKnxDevice = [a, b].some(x => x.kind === "device" && deviceTypes[x.device?.type]?.energy === false);
-        const hasKnxPort = [a, b].some(x => x.kind === "knxport" || x.kind === "box");
-
-        if (!hasKnxDevice && !hasKnxPort) {
-            alert("KNX hattı için KNX cihazı veya pano KNX portu seçmelisin.");
+        if ([a, b].some(x => x.kind === "device" && deviceTypes[x.device?.type]?.energy === true)) {
+            alert("Enerji cihazı KNX bus hattına bağlanamaz.");
             return false;
         }
 
-        if ([a, b].some(x => x.kind === "device" && deviceTypes[x.device?.type]?.energy === true)) {
-            alert("Enerji cihazı KNX bus hattına bağlanamaz.");
+        const valid = [a, b].some(x => x.kind === "device" && deviceTypes[x.device?.type]?.energy === false)
+            || [a, b].some(x => x.kind === "knxport")
+            || [a, b].some(x => x.kind === "box");
+
+        if (!valid) {
+            alert("KNX hattı için KNX cihazı, pano veya KNX portu seçmelisin.");
             return false;
         }
     }
 
     return true;
+}
+
+function hasEnergyConnection(deviceId) {
+    return state.wires.some(w => {
+        if (w.type !== "energy") return false;
+        const dev = [w.from, w.to].find(x => x.kind === "device");
+        return dev && dev.deviceId === deviceId;
+    });
+}
+
+function getNextChannel(channelItem) {
+    const panel = state.panels.find(p => p.id === channelItem.parentId);
+    if (!panel) return null;
+    const module = panel.modules.find(m => m.id === channelItem.moduleId);
+    if (!module) return null;
+    const idx = module.channels.findIndex(c => c.id === channelItem.channelId);
+    return module.channels[idx + 1] || null;
+}
+
+function makeChannelItem(panel, module, ch) {
+    return {
+        kind: "channel",
+        parentId: panel.id,
+        moduleId: module.id,
+        channelId: ch.id,
+        channel: ch,
+        module,
+        label: panel.name + " - " + module.name + " " + ch.label
+    };
+}
+
+function createBlindDownWireIfNeeded(wire) {
+    const deviceItem = [wire.from, wire.to].find(x => x.kind === "device");
+    const channelItem = [wire.from, wire.to].find(x => x.kind === "channel");
+    if (!deviceItem || !channelItem || deviceItem.device.type !== "blind") return;
+
+    const panel = state.panels.find(p => p.id === channelItem.parentId);
+    const module = panel.modules.find(m => m.id === channelItem.moduleId);
+    const next = getNextChannel(channelItem);
+    if (!panel || !module || !next) return;
+
+    const downChannelItem = makeChannelItem(panel, module, next);
+    const downWire = createWire(channelItem, deviceItem, "energy", true);
+    downWire.from = downChannelItem;
+    downWire.to = deviceItem;
+    downWire.fromLabel = downChannelItem.label;
+    downWire.toLabel = deviceItem.label;
+    downWire.label = "DOWN";
+    downWire.autoDown = true;
+    state.wires.push(downWire);
+
+    next.locked = true;
+    next.usedBy = deviceItem.label + " DOWN";
+    next.direction = "DOWN";
 }
 
 function applyChannelUsage(wire) {
@@ -364,15 +462,11 @@ function applyChannelUsage(wire) {
     const channel = module.channels.find(c => c.id === channelItem.channelId);
     if (!channel) return;
 
-    channel.usedBy = deviceItem.label;
-
     if (deviceItem.device.type === "blind") {
-        const idx = module.channels.findIndex(c => c.id === channel.id);
-        const next = module.channels[idx + 1];
-        if (next) {
-            next.locked = true;
-            next.usedBy = deviceItem.label + " DOWN";
-        }
+        channel.usedBy = deviceItem.label + " UP";
+        channel.direction = "UP";
+    } else {
+        channel.usedBy = deviceItem.label;
     }
 }
 
@@ -393,14 +487,23 @@ function drawWires() {
         const y1 = ar.top + ar.height / 2 - canvasRect.top;
         const x2 = br.left + br.width / 2 - canvasRect.left;
         const y2 = br.top + br.height / 2 - canvasRect.top;
+        const mx = (x1 + x2) / 2;
+        const my = (y1 + y2) / 2;
 
         const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
         line.setAttribute("x1", x1);
         line.setAttribute("y1", y1);
         line.setAttribute("x2", x2);
         line.setAttribute("y2", y2);
-        line.setAttribute("class", wire.type === "energy" ? "energy-line" : "knx-line");
+        line.setAttribute("class", wire.autoDown ? "auto-down-line" : (wire.type === "energy" ? "energy-line" : "knx-line"));
         svg.appendChild(line);
+
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("x", mx + 6);
+        text.setAttribute("y", my - 6);
+        text.setAttribute("class", "wire-label");
+        text.textContent = wire.label || "";
+        svg.appendChild(text);
     });
 }
 
@@ -519,12 +622,12 @@ function updateChannelList() {
 }
 
 function saveProject() {
-    localStorage.setItem("knxdoit_simple_v2_project", JSON.stringify(state));
+    localStorage.setItem("knxdoit_simple_v3_project", JSON.stringify(state));
     document.getElementById("status").innerText = "Kaydedildi";
 }
 
 function loadProject() {
-    const saved = localStorage.getItem("knxdoit_simple_v2_project");
+    const saved = localStorage.getItem("knxdoit_simple_v3_project");
     if (!saved) return;
 
     try {
@@ -541,7 +644,7 @@ function loadProject() {
 function clearCanvas() {
     if (!confirm("Projeyi temizlemek istiyor musun?")) return;
     state = { rooms: [], panels: [], wires: [] };
-    localStorage.removeItem("knxdoit_simple_v2_project");
+    localStorage.removeItem("knxdoit_simple_v3_project");
     roomCounter = 0;
     panelCounter = 0;
     render();
@@ -563,7 +666,7 @@ async function downloadPdf() {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "knxdoit_kablo_baglanti.pdf";
+    a.download = "knxdoit_profesyonel_kablo_raporu.pdf";
     a.click();
     window.URL.revokeObjectURL(url);
 }

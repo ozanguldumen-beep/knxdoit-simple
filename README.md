@@ -1,3 +1,3 @@
-# knxdoit-simple-v2
+# knxdoit-simple-v3
 
-KNXdoit Simple MVP v2.
+KNXdoit Simple MVP v3.
