@@ -1,7 +1,48 @@
-body{font-family:Arial;margin:0}
-.top{padding:10px;background:#222;color:#fff}
-.layout{display:flex;height:90vh}
-.left{width:200px;background:#eee;padding:10px}
-.right{width:200px;background:#eee;padding:10px}
-.canvas{flex:1;position:relative;background:#f4f4f4}
-.box{position:absolute;padding:10px;background:#fff;border:1px solid #000;cursor:move}
+* { box-sizing: border-box; }
+body { margin:0; font-family:Arial,sans-serif; color:#102033; background:#f4f7f9; }
+.app { display:grid; grid-template-columns:300px 1fr 360px; height:100vh; }
+.sidebar { background:#102033; color:white; padding:20px; overflow:auto; }
+.sidebar h1 { margin:0; font-size:32px; }
+.sidebar h1 span { color:#12a064; }
+.sidebar p { color:#cbd5e1; font-size:13px; margin-bottom:18px; }
+.label { font-size:12px; color:#93a4b8; display:block; margin-bottom:6px; }
+.project-input { width:100%; padding:10px; border-radius:10px; border:0; margin-bottom:12px; font-weight:700; }
+.section-title { margin:18px 0 8px; color:#93a4b8; font-size:12px; text-transform:uppercase; }
+button { width:100%; border:0; border-radius:10px; padding:10px 12px; margin:4px 0; font-weight:700; cursor:pointer; background:#e9eef5; color:#102033; text-align:left; }
+button:hover { background:#dbe4ef; }
+button.active { background:#12a064; color:white; }
+.floor-tabs { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.floor-tab { width:auto; padding:8px 10px; background:#25374b; color:white; }
+.floor-tab.active { background:#12a064; }
+.workspace { display:flex; flex-direction:column; min-width:0; }
+header { height:78px; background:white; border-bottom:1px solid #d8e0e8; display:flex; align-items:center; justify-content:space-between; padding:0 22px; }
+header h2 { margin:0 0 4px; font-size:22px; }
+#status { font-size:13px; color:#12a064; }
+.legend { display:flex; gap:16px; font-size:13px; }
+.legend b { display:inline-block; width:28px; height:4px; vertical-align:middle; border-radius:4px; margin-right:6px; }
+.brown { background:#c2410c; } .green { background:#0f9d58; } .down { background:#c2410c; opacity:.55; }
+.canvas { position:relative; flex:1; overflow:hidden; background-color:#f8fafc; background-image:radial-gradient(#cbd5e1 1px, transparent 1px); background-size:20px 20px; }
+#wires { position:absolute; inset:0; width:100%; height:100%; pointer-events:auto; z-index:1; }
+.wire-label { font-size:11px; font-weight:700; fill:#102033; paint-order:stroke; stroke:white; stroke-width:4px; pointer-events:none; }
+.box { position:absolute; z-index:2; background:white; border:2px solid #111827; border-radius:14px; padding:10px; box-shadow:0 8px 18px rgba(15,23,42,.08); cursor:move; min-width:180px; min-height:95px; }
+.box.room { min-width:760px; min-height:175px; }
+.box.panel { min-width:430px; min-height:220px; background:#eef2ff; border-color:#2563eb; }
+.box.collector { min-width:270px; min-height:145px; background:#fff7ed; border-color:#c2410c; }
+.box-title { font-weight:800; text-align:center; margin-bottom:10px; font-size:20px; }
+.device-wrap { display:flex; flex-wrap:wrap; gap:8px; align-items:flex-start; }
+.device { display:inline-flex; flex-direction:column; align-items:center; justify-content:center; width:92px; min-height:78px; border:1px solid #d8e0e8; border-radius:12px; background:#f8fafc; cursor:pointer; font-size:12px; text-align:center; padding:6px; }
+.device:hover { background:#eef6f1; border-color:#12a064; }
+.device.selected { outline:4px solid rgba(18,160,100,.28); }
+.device.connected { background:#fff7ed; border-color:#c2410c; }
+.device-icon { font-size:24px; line-height:1; margin-bottom:4px; }
+.rightbar { background:white; border-left:1px solid #d8e0e8; padding:18px; overflow-y:auto; }
+.rightbar h3 { margin:12px 0; }
+.panel-list { border:1px solid #d8e0e8; border-radius:12px; padding:10px; min-height:74px; font-size:13px; background:#fbfdff; }
+.row { padding:8px 0; border-bottom:1px solid #edf2f7; }
+.row:last-child { border-bottom:0; }
+.row button { width:auto; padding:6px 8px; margin:2px; font-size:12px; }
+.energy-line { stroke:#c2410c; stroke-width:3.5; cursor:pointer; }
+.knx-line { stroke:#0f9d58; stroke-width:3.5; cursor:pointer; }
+.auto-down-line { stroke:#c2410c; stroke-width:3.5; stroke-dasharray:8 5; cursor:pointer; }
+.bus-bar { position:absolute; left:30px; right:30px; height:6px; background:#0f9d58; border-radius:8px; bottom:28px; z-index:1; }
+.bus-label { position:absolute; left:35px; bottom:42px; font-size:12px; font-weight:800; color:#0f9d58; z-index:1; }

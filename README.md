@@ -1,3 +1,3 @@
-# knxdoit-simple-v4
+# KNXdoit v5 Pro
 
-KNXdoit v4: silme, kollektör, KNX bus T bağlantı, profesyonel PDF.
+V4 görsel arayüz + v5 ürün/kat/proje sistemi.
