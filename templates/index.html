@@ -2,14 +2,14 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <title>KNXdoit v7</title>
+  <title>KNXdoit v9 Pro</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 <div class="app">
   <aside class="sidebar">
     <h1>KNX<span>doit</span></h1>
-    <p>Elektrikçi için KNX kablo şeması, bayi için kolay proje aracı</p>
+    <p>KNX doğrulamalı kablo şeması ve proje aracı</p>
 
     <label class="label">Proje Adı</label>
     <input id="projectName" class="project-input" value="Villa Projesi" onchange="updateProjectName()">
@@ -45,6 +45,7 @@
 
     <details open>
       <summary>▼ Projeler / Çıktılar</summary>
+      <button onclick="validateAndShow()">Projeyi Kontrol Et</button>
       <button onclick="saveProject()">Projeyi Kaydet</button>
       <button onclick="showProjects()">Kayıtlı Projeler</button>
       <button onclick="generateGA()">Grup Adresi Oluştur</button>
@@ -59,6 +60,7 @@
         <h2 id="titleProject">Villa Projesi</h2>
         <span id="status">Kaydedilmedi</span>
       </div>
+      <div class="validation-pill" id="validationPill">Kontrol bekliyor</div>
       <div class="legend">
         <span><b class="brown"></b> Enerji 220V</span>
         <span><b class="green"></b> KNX Bus</span>
@@ -73,10 +75,11 @@
 
   <aside class="rightbar">
     <div class="tabs">
-      <button class="tab active" onclick="showTab('projects')">Projeler</button>
-      <button class="tab" onclick="showTab('ga')">GA</button>
-      <button class="tab" onclick="showTab('bom')">Ürün</button>
-      <button class="tab" onclick="showTab('wires')">Bağlantı</button>
+      <button class="tab active" onclick="showTab('projects', event)">Projeler</button>
+      <button class="tab" onclick="showTab('ga', event)">GA</button>
+      <button class="tab" onclick="showTab('bom', event)">Ürün</button>
+      <button class="tab" onclick="showTab('wires', event)">Bağlantı</button>
+      <button class="tab" onclick="showTab('validation', event)">Kontrol</button>
     </div>
 
     <section id="tab-projects" class="tab-panel active">
@@ -97,6 +100,11 @@
     <section id="tab-wires" class="tab-panel">
       <h3>Bağlantılar</h3>
       <div id="wireList" class="panel-list">Henüz bağlantı yok.</div>
+    </section>
+
+    <section id="tab-validation" class="tab-panel">
+      <h3>Proje Kontrol</h3>
+      <div id="validationList" class="panel-list">Henüz kontrol edilmedi.</div>
     </section>
   </aside>
 </div>

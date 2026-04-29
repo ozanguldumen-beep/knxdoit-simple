@@ -35,7 +35,8 @@ DPT_RULES = {
     "valve": [("Aç/Kapa", "DPST-1-1")],
     "motor_valve": [("Motorlu Vana", "DPST-1-1")],
     "onoff": [("On/Off", "DPST-1-1")],
-    "aircon": [("Klima On/Off", "DPST-1-1")],
+    "aircon_onoff": [("Klima On/Off", "DPST-1-1")],
+    "aircon_gateway": [("Klima On/Off", "DPST-1-1"), ("Mod", "DPST-20-105"), ("Setpoint", "DPST-9-1"), ("Fan", "DPST-5-1")],
     "boiler": [("Kombi On/Off", "DPST-1-1")],
     "door": [("Kapı Kontrol", "DPST-1-1")],
 }
@@ -102,7 +103,7 @@ def draw_pdf_schematic(c, data, y_start):
         for r in f.get("rooms", []):
             for d in r.get("devices", []):
                 typ = d.get("type", "")
-                if typ.startswith("knx") or typ in ["binary_input"]:
+                if typ.startswith("knx") or typ in ["binary_input", "aircon_gateway"]:
                     devices.append((r.get("name","Oda"), d.get("name","Cihaz"), typ))
         rows.append((f.get("name","Kat"), devices))
 
@@ -121,7 +122,7 @@ def draw_pdf_schematic(c, data, y_start):
             x = bus_left + step*i
             c.setStrokeColor(colors.HexColor("#0f9d58"))
             c.line(x, row_y, x, row_y+38)
-            icon = "A" if "actuator" in typ else "T" if "thermostat" in typ else "S" if "sensor" in typ else "I" if "input" in typ else "K"
+            icon = "A" if "actuator" in typ else "T" if "thermostat" in typ else "S" if "sensor" in typ else "G" if "gateway" in typ else "K"
             draw_device(c, x, row_y+55, name, icon)
     return y - min(len(rows),4)*88 - 10
 
@@ -129,6 +130,7 @@ def draw_pdf_schematic(c, data, y_start):
 def pdf():
     data = request.get_json(force=True) or {}
     wires = data.get("wires", [])
+    validations = data.get("validation", [])
     project_name = data.get("projectName", "KNXdoit Projesi")
 
     buffer = BytesIO()
@@ -145,9 +147,25 @@ def pdf():
 
     c.setFont(FONT_BOLD, 14)
     c.setFillColor(colors.black)
-    c.drawString(30, max(next_y, 170), "2. Kablo Bağlantı Listesi")
+    c.drawString(30, max(next_y, 190), "2. Proje Doğrulama")
+    y = max(next_y, 190) - 18
+    c.setFont(FONT_NAME, 7.5)
+    if validations:
+        for v in validations[:10]:
+            c.setFillColor(colors.red if v.get("level") == "error" else colors.HexColor("#b45309"))
+            c.drawString(35, y, f"- {v.get('message','')}"[:120])
+            y -= 10
+    else:
+        c.setFillColor(colors.HexColor("#0f9d58"))
+        c.drawString(35, y, "Proje temel doğrulama kurallarına uygun görünüyor.")
+        y -= 12
 
-    y = max(next_y, 170) - 22
+    y -= 6
+    c.setFillColor(colors.black)
+    c.setFont(FONT_BOLD, 14)
+    c.drawString(30, y, "3. Kablo Bağlantı Listesi")
+    y -= 18
+
     c.setFont(FONT_BOLD, 7)
     headers = ["No", "Hat", "Başlangıç", "Bitiş", "Etiket", "Not"]
     xs = [30, 55, 125, 300, 475, 570]
@@ -169,6 +187,7 @@ def pdf():
             w.get("label","-")[:20],
             "DOWN otomatik" if w.get("autoDown") else ("T bağlantı" if w.get("type")=="knx" else "Röle bağlantısı")
         ]
+        c.setFillColor(colors.black)
         for x, val in zip(xs, values):
             c.drawString(x, y, val)
         y -= 10
@@ -177,7 +196,7 @@ def pdf():
     c.drawString(30, 16, "Bu rapor saha elektrikçisi için hazırlanmıştır. KNX programlama/grup adresleri ayrıca kontrol edilmelidir.")
     c.save()
     buffer.seek(0)
-    return send_file(buffer, as_attachment=True, download_name="knxdoit_v7_elektrikci_semasi.pdf", mimetype="application/pdf")
+    return send_file(buffer, as_attachment=True, download_name="knxdoit_v9_pro_raporu.pdf", mimetype="application/pdf")
 
 if __name__ == "__main__":
     app.run(debug=True)

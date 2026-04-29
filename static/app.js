@@ -3,30 +3,33 @@ const catalog = {
   knx_thermostat:{icon:"🌡️", name:"KNX Termostat", kind:"knx"},
   knx_sensor:{icon:"◉", name:"KNX Sensör", kind:"knx"},
   ip_router:{icon:"🌐", name:"IP Router", kind:"knx"},
-  power_supply:{icon:"⚡", name:"Power Supply", kind:"knx"},
+  power_supply:{icon:"⚡", name:"Power Supply", kind:"knx", required:true},
   knx_thermo_switch:{icon:"🌡️▣", name:"KNX Termostatlı Anahtar", kind:"knx"},
   line_coupler:{icon:"🔗", name:"Line Coupler", kind:"knx"},
   binary_input:{icon:"🔘", name:"Universal Binary Input", kind:"knx"},
-  switch_actuator:{icon:"🔌", name:"Switch Actuator", kind:"actuator"},
-  dimmer_actuator:{icon:"🔆", name:"Dimmer Actuator", kind:"actuator"},
-  blind_actuator:{icon:"↕️", name:"Blind Actuator", kind:"actuator"},
-  rgbw_actuator:{icon:"🌈", name:"RGBW Actuator", kind:"actuator"},
-  lamp:{icon:"💡", name:"Lamba", kind:"energy"},
-  dim_lamp:{icon:"🔆", name:"Dim Lamba", kind:"energy"},
-  blind:{icon:"↕️", name:"Perde/Panjur", kind:"energy"},
-  aircon:{icon:"❄️", name:"Klima", kind:"energy"},
-  boiler:{icon:"🔥", name:"Kombi", kind:"energy"},
-  valve:{icon:"🚰", name:"Vana", kind:"energy"},
-  door:{icon:"🚪", name:"Kapı", kind:"energy"},
-  motor_valve:{icon:"⚙️", name:"Motorlu Vana", kind:"energy"},
-  onoff:{icon:"🔴", name:"ON/OFF Cihaz", kind:"energy"},
+  aircon_gateway:{icon:"❄️", name:"KNX Klima Gateway", kind:"knx"},
+  switch_actuator_8:{icon:"🔌", name:"Switch Actuator 8 Çıkış", kind:"actuator", outputs:8, amp:10},
+  switch_actuator_12:{icon:"🔌", name:"Switch Actuator 12 Çıkış", kind:"actuator", outputs:12, amp:10},
+  switch_actuator_16:{icon:"🔌", name:"Switch Actuator 16 Çıkış", kind:"actuator", outputs:16, amp:10},
+  switch_actuator_24:{icon:"🔌", name:"Switch Actuator 24 Çıkış", kind:"actuator", outputs:24, amp:10},
+  dimmer_actuator:{icon:"🔆", name:"Dimmer Actuator", kind:"actuator", outputs:4, amp:4},
+  rgbw_actuator:{icon:"🌈", name:"RGBW Actuator", kind:"actuator", outputs:4, amp:4},
+  lamp:{icon:"💡", name:"Lamba", kind:"energy", load:1},
+  dim_lamp:{icon:"🔆", name:"Dim Lamba", kind:"energy", load:1},
+  blind:{icon:"↕️", name:"Perde/Panjur", kind:"energy", load:2, needsTwoOutputs:true},
+  aircon_onoff:{icon:"❄️", name:"ON/OFF Klima", kind:"energy", load:3},
+  boiler:{icon:"🔥", name:"Kombi", kind:"energy", load:1},
+  valve:{icon:"🚰", name:"Vana", kind:"energy", load:0.5},
+  door:{icon:"🚪", name:"Kapı", kind:"energy", load:1},
+  motor_valve:{icon:"⚙️", name:"Motorlu Vana", kind:"energy", load:1},
+  onoff:{icon:"🔴", name:"ON/OFF Cihaz", kind:"energy", load:1},
   collector:{icon:"🔥", name:"Yerden Isıtma Kollektörü", kind:"collector"}
 };
 
 const groups = {
-  knxProducts:["knx_switch","knx_thermostat","knx_sensor","ip_router","power_supply","knx_thermo_switch","line_coupler","binary_input"],
-  actuatorProducts:["switch_actuator","dimmer_actuator","blind_actuator","rgbw_actuator"],
-  energyProducts:["lamp","dim_lamp","blind","aircon","boiler","valve","collector","door","motor_valve","onoff"]
+  knxProducts:["knx_switch","knx_thermostat","knx_sensor","ip_router","power_supply","knx_thermo_switch","line_coupler","binary_input","aircon_gateway"],
+  actuatorProducts:["switch_actuator_8","switch_actuator_12","switch_actuator_16","switch_actuator_24","dimmer_actuator","rgbw_actuator"],
+  energyProducts:["lamp","dim_lamp","blind","aircon_onoff","boiler","valve","collector","door","motor_valve","onoff"]
 };
 
 let qty = {};
@@ -38,7 +41,8 @@ let state = {
   floors:[{id:uid("floor"), name:"1. Kat", rooms:[]}],
   panels:[],
   collectors:[],
-  wires:[]
+  wires:[],
+  validation:[]
 };
 let selected = null;
 let tool = null;
@@ -70,10 +74,15 @@ function changeQty(type,delta){
   document.getElementById("qty-"+type).innerText=qty[type];
 }
 
-function showTab(name){
+function showTab(name, ev){
   document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
   document.querySelectorAll(".tab-panel").forEach(p=>p.classList.remove("active"));
-  event.target.classList.add("active");
+  if(ev) ev.target.classList.add("active");
+  else {
+    const order = ["projects","ga","bom","wires","validation"];
+    const idx = order.indexOf(name);
+    if(idx >= 0) document.querySelectorAll(".tab")[idx].classList.add("active");
+  }
   document.getElementById("tab-"+name).classList.add("active");
 }
 
@@ -146,6 +155,14 @@ function setTool(t){
   if(btn) btn.classList.add("active");
 }
 
+function allDevices(){
+  const arr=[];
+  state.floors.forEach(f=>f.rooms.forEach(r=>r.devices.forEach(d=>arr.push({...d, location:r.name}))));
+  state.panels.forEach(p=>p.devices.forEach(d=>arr.push({...d, location:p.name})));
+  state.collectors.forEach(c=>c.devices.forEach(d=>arr.push({...d, location:c.name})));
+  return arr;
+}
+
 function render(){
   document.getElementById("projectName").value=state.projectName;
   document.getElementById("titleProject").innerText=state.projectName;
@@ -172,6 +189,7 @@ function render(){
   drawWires();
   updateBom();
   updateWireList();
+  updateValidationUI(false);
 }
 
 function renderBox(canvas, obj, cls){
@@ -186,6 +204,9 @@ function renderBox(canvas, obj, cls){
     const meta=catalog[dev.type] || {icon:"⚙️", name:dev.name, kind:"energy"};
     const d=document.createElement("div");
     d.className="device";
+    const relatedWarnings = (state.validation||[]).filter(v=>v.deviceId===dev.id);
+    if(relatedWarnings.some(v=>v.level==="error")) d.classList.add("error");
+    else if(relatedWarnings.length) d.classList.add("warn");
     d.dataset.deviceId=dev.id;
     d.innerHTML=`<div class="device-icon">${meta.icon}</div><div>${dev.name}</div>`;
     d.onclick=(e)=>{
@@ -242,10 +263,15 @@ function hasEnergyConnection(deviceId){
   return state.wires.some(w => w.type === "energy" && (w.from.id === deviceId || w.to.id === deviceId));
 }
 
+function hasKnxConnection(deviceId){
+  return state.wires.some(w => w.type === "knx" && (w.from.id === deviceId || w.to.id === deviceId));
+}
+
 function allowed(a,b,t){
-  const loadTypes=["lamp","dim_lamp","blind","aircon","boiler","valve","door","motor_valve","onoff"];
-  const actuatorTypes=["switch_actuator","dimmer_actuator","blind_actuator","rgbw_actuator"];
-  const knxOnlyTypes=["knx_switch","knx_thermostat","knx_sensor","ip_router","power_supply","knx_thermo_switch","line_coupler","binary_input"];
+  const loadTypes=["lamp","dim_lamp","blind","aircon_onoff","boiler","valve","door","motor_valve","onoff"];
+  const actuatorTypes=["switch_actuator_8","switch_actuator_12","switch_actuator_16","switch_actuator_24","dimmer_actuator","rgbw_actuator"];
+  const switchActuators=["switch_actuator_8","switch_actuator_12","switch_actuator_16","switch_actuator_24"];
+  const knxOnlyTypes=["knx_switch","knx_thermostat","knx_sensor","ip_router","power_supply","knx_thermo_switch","line_coupler","binary_input","aircon_gateway"];
 
   if(t==="knx"){
     if(loadTypes.includes(a.type)||loadTypes.includes(b.type)){ alert("Enerji ürünü KNX hattına bağlanamaz."); return false; }
@@ -260,12 +286,35 @@ function allowed(a,b,t){
     if(knxOnlyTypes.includes(a.type) || knxOnlyTypes.includes(b.type)){ alert("KNX ürünler enerji hattına bağlanamaz."); return false; }
 
     const loadItem = aLoad ? a : (bLoad ? b : null);
+    const actItem = aAct ? a : (bAct ? b : null);
+
     if(!((aLoad && bAct) || (bLoad && aAct))){
       alert("Enerji hattı sadece aktüatör ile enerjili ürün arasında çizilir.");
       return false;
     }
+
     if(loadItem && hasEnergyConnection(loadItem.id)){
       alert("Bu enerji ürününe zaten bir röle/kablo bağlandı. İkinci enerji kablosu bağlanamaz.");
+      return false;
+    }
+
+    if(loadItem && loadItem.type==="dim_lamp" && actItem.type!=="dimmer_actuator"){
+      alert("Dim lamba sadece Dimmer Actuator'a bağlanır.");
+      return false;
+    }
+
+    if(loadItem && loadItem.type==="blind" && !switchActuators.includes(actItem.type)){
+      alert("Perde/Panjur Switch Actuator çıkışına bağlanır. Bağlanınca UP/DOWN iki röle kullanır.");
+      return false;
+    }
+
+    if(loadItem && !["dim_lamp"].includes(loadItem.type) && actItem.type==="dimmer_actuator"){
+      alert("Dimmer Actuator sadece dim lamba gibi dim yükler için kullanılmalı.");
+      return false;
+    }
+
+    if(loadItem && ["lamp","valve","aircon_onoff","boiler","door","motor_valve","onoff","blind"].includes(loadItem.type) && !switchActuators.includes(actItem.type) && loadItem.type!=="dim_lamp"){
+      alert("Bu enerji ürünü Switch Actuator çıkışına bağlanmalı.");
       return false;
     }
   }
@@ -358,6 +407,86 @@ function deleteBox(id,cls){
   render(); markDirty();
 }
 
+function validateProject(){
+  const issues=[];
+  const devices = allDevices();
+  const powerSupplyCount = devices.filter(d=>d.type==="power_supply").length;
+
+  if(powerSupplyCount===0){
+    issues.push({level:"error", message:"Power Supply yok. KNX sistemi Power Supply olmadan geçersizdir."});
+  }
+
+  devices.forEach(d=>{
+    const meta=catalog[d.type];
+    if(!meta) return;
+    if((meta.kind==="knx" || meta.kind==="actuator") && !["power_supply"].includes(d.type)){
+      if(!hasKnxConnection(d.id)){
+        issues.push({level:"warn", deviceId:d.id, message:`${d.name} KNX Bus hattına bağlı değil. KNX ürünü bus olmadan çalışmaz.`});
+      }
+    }
+    if(meta.kind==="energy" && !hasEnergyConnection(d.id)){
+      issues.push({level:"warn", deviceId:d.id, message:`${d.name} henüz aktüatör çıkışına bağlı değil.`});
+    }
+  });
+
+  const blindUpDown = state.wires.filter(w=>w.type==="energy" && (w.label==="UP" || w.label==="DOWN"));
+  const blindGroups = {};
+  blindUpDown.forEach(w=>{
+    const load = [w.from,w.to].find(x=>x.type==="blind");
+    if(load){
+      blindGroups[load.id] = blindGroups[load.id] || {};
+      blindGroups[load.id][w.label] = true;
+    }
+  });
+  Object.entries(blindGroups).forEach(([id, g])=>{
+    if(!(g.UP && g.DOWN)){
+      issues.push({level:"error", deviceId:id, message:"Perde/Panjur için UP ve DOWN iki ayrı röle/kablo olmalıdır."});
+    }
+  });
+
+  state.validation = issues;
+  return issues;
+}
+
+function validateAndShow(){
+  const issues = validateProject();
+  updateValidationUI(true);
+  showTab("validation");
+  render();
+}
+
+function updateValidationUI(force){
+  const issues = state.validation || [];
+  const pill=document.getElementById("validationPill");
+  const list=document.getElementById("validationList");
+  if(!pill || !list) return;
+
+  if(!force && issues.length===0){
+    pill.className="validation-pill";
+    pill.innerText="Kontrol bekliyor";
+    return;
+  }
+
+  list.innerHTML="";
+  if(issues.length===0){
+    pill.className="validation-pill ok";
+    pill.innerText="Proje uygun";
+    list.innerHTML='<div class="validation-ok">Proje temel KNX kurallarına uygun görünüyor.</div>';
+    return;
+  }
+
+  const hasError = issues.some(i=>i.level==="error");
+  pill.className="validation-pill "+(hasError?"error":"warn");
+  pill.innerText = hasError ? "Hata var" : "Uyarı var";
+
+  issues.forEach(i=>{
+    const div=document.createElement("div");
+    div.className=i.level==="error"?"validation-error":"validation-warn";
+    div.innerText=i.message;
+    list.appendChild(div);
+  });
+}
+
 async function generateGA(){
   const res=await fetch("/api/group-addresses",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(state)});
   const data=await res.json();
@@ -369,10 +498,15 @@ async function generateGA(){
     div.innerHTML=`<b>${r.address}</b> <small>${r.physical}</small><br>${r.floor} / ${r.room}<br>${r.device} - ${r.function}`;
     list.appendChild(div);
   });
-  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-  document.querySelectorAll(".tab-panel").forEach(p=>p.classList.remove("active"));
-  document.querySelectorAll(".tab")[1].classList.add("active");
-  document.getElementById("tab-ga").classList.add("active");
+  showTab("ga");
+}
+
+function allDevices(){
+  const arr=[];
+  state.floors.forEach(f=>f.rooms.forEach(r=>r.devices.forEach(d=>arr.push({...d, location:r.name}))));
+  state.panels.forEach(p=>p.devices.forEach(d=>arr.push({...d, location:p.name})));
+  state.collectors.forEach(c=>c.devices.forEach(d=>arr.push({...d, location:c.name})));
+  return arr;
 }
 
 function updateBom(){
@@ -424,6 +558,7 @@ function openProject(name){
   const all=JSON.parse(localStorage.getItem("knxdoit_projects")||"{}");
   state=all[name];
   if(!state.collectors) state.collectors=[];
+  if(!state.validation) state.validation=[];
   render();
   document.getElementById("status").innerText="Proje açıldı";
 }
@@ -437,7 +572,7 @@ function deleteProject(name){
 
 function clearCurrent(){
   if(!confirm("Ekran temizlensin mi?")) return;
-  state={projectName:"Villa Projesi",activeFloor:0,floors:[{id:uid("floor"),name:"1. Kat",rooms:[]}],panels:[],collectors:[],wires:[]};
+  state={projectName:"Villa Projesi",activeFloor:0,floors:[{id:uid("floor"),name:"1. Kat",rooms:[]}],panels:[],collectors:[],wires:[],validation:[]};
   render();
 }
 
@@ -445,11 +580,12 @@ function markDirty(){ document.getElementById("status").innerText="Kaydedilmedi"
 
 async function downloadPdf(){
   updateProjectName();
+  state.validation = validateProject();
   const res=await fetch("/api/pdf",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(state)});
   const blob=await res.blob();
   const url=URL.createObjectURL(blob);
   const a=document.createElement("a");
-  a.href=url; a.download="knxdoit_v7_elektrikci_semasi.pdf"; a.click();
+  a.href=url; a.download="knxdoit_v9_pro_raporu.pdf"; a.click();
   URL.revokeObjectURL(url);
 }
 

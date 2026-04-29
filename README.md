@@ -1,3 +1,3 @@
-# KNXdoit v7
+# KNXdoit v9 Pro Validation
 
-Right panel tabs, product quantity selector, restored products, and stricter energy connection rules.
+KNX rule validation, stricter wiring rules, HVAC gateway option, and project validation report.
