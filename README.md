@@ -1,2 +1,3 @@
 # knxdoit-simple
-Simple KNX builder MVP
+
+Simple KNX builder MVP.
