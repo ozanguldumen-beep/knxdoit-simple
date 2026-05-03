@@ -46,12 +46,12 @@ function drawPanelBox(ctx, panel) {
   );
 
   ctx.fillStyle = "#0f172a";
-  ctx.font = "700 24px Arial";
-  ctx.fillText("KNX Pano", 55, 70);
+  ctx.font = "700 30px Arial";
+  ctx.fillText("KNX Pano", 70, 78);
 
   ctx.fillStyle = "#64748b";
-  ctx.font = "13px Arial";
-  ctx.fillText("Ön görünüm / DIN ray yerleşimi", 55, 92);
+  ctx.font = "16px Arial";
+  ctx.fillText("Ön görünüm / DIN ray yerleşimi", 70, 108);
 }
 
 function drawRails(ctx, panel) {
@@ -64,14 +64,14 @@ function drawRails(ctx, panel) {
 function drawDinRail(ctx, rail) {
   roundRect(
     ctx,
-    rail.x - 8,
-    rail.y - 5,
-    rail.width + 16,
-    rail.height + 10,
-    6,
-    "#cbd5e1",
+    rail.x - 10,
+    rail.y - 8,
+    rail.width + 20,
+    rail.height + 16,
+    7,
     "#dbeafe",
-    4
+    "#dbeafe",
+    1
   );
 
   roundRect(
@@ -80,9 +80,9 @@ function drawDinRail(ctx, rail) {
     rail.y,
     rail.width,
     rail.height,
-    3,
+    4,
     "#94a3b8",
-    "#94a3b8",
+    "#64748b",
     1
   );
 
@@ -101,8 +101,8 @@ function drawDinRail(ctx, rail) {
 
 function drawRailLabel(ctx, rail) {
   ctx.fillStyle = "#334155";
-  ctx.font = "700 14px Arial";
-  ctx.fillText(rail.name, rail.x, rail.y + rail.height + 28);
+  ctx.font = "700 16px Arial";
+  ctx.fillText(rail.name, rail.x, rail.y + rail.height + 34);
 }
 
 function drawDevices(ctx, panel) {
@@ -116,34 +116,20 @@ function drawDevices(ctx, panel) {
 function getDeviceDrawBox(device, rail) {
   const moduleWidth = device.moduleWidth || 2;
   const w = moduleWidth * PANEL_CONFIG.moduleUnit - 4;
-  const h = 72;
+  const h = PANEL_CONFIG.deviceHeight;
 
-  const slot =
-    device.slot ??
-    device.startSlot ??
-    device.start ??
-    0;
+  const slot = device.startSlot ?? device.slot ?? 0;
 
   const x = rail.x + slot * PANEL_CONFIG.moduleUnit + 2;
 
-  /*
-    GEÇİCİ SAĞLAM FIX:
-    Cihaz artık DIN rayın üstüne değil,
-    rayın biraz altına çiziliyor.
-    Böylece KNX Pano başlığına binmez.
-  */
-  const y = rail.y + 20;
+  // Cihaz DIN rayın tam üstüne oturur; ray cihazın arkasında kalır.
+  const y = rail.y - Math.round((h - rail.height) / 2);
 
   return { x, y, w, h };
 }
 
 function drawDevice(ctx, device, rail) {
-  const box = getDeviceDrawBox(device, rail);
-
-  const x = box.x;
-  const y = box.y;
-  const w = box.w;
-  const h = box.h;
+  const { x, y, w, h } = getDeviceDrawBox(device, rail);
 
   roundRect(
     ctx,
@@ -154,18 +140,18 @@ function drawDevice(ctx, device, rail) {
     7,
     device.color || "#2563eb",
     "#1e293b",
-    1
+    2
   );
 
-  ctx.fillStyle = "rgba(255,255,255,0.13)";
-  ctx.fillRect(x + 4, y + 5, Math.max(0, w - 8), 20);
+  ctx.fillStyle = "rgba(255,255,255,0.14)";
+  ctx.fillRect(x + 4, y + 5, Math.max(0, w - 8), 22);
 
   ctx.fillStyle = "#ffffff";
-  ctx.font = "700 11px Arial";
-  wrapText(ctx, device.name, x + 7, y + 17, w - 14, 12, 2);
+  ctx.font = "700 12px Arial";
+  wrapText(ctx, device.name, x + 8, y + 19, w - 16, 13, 2);
 
-  ctx.font = "700 10px Arial";
-  ctx.fillText(`${device.moduleWidth || 2}M`, x + 7, y + h - 8);
+  ctx.font = "700 11px Arial";
+  ctx.fillText(`${device.moduleWidth || 2}M`, x + 8, y + h - 9);
 
   drawTerminals(ctx, x, y, w, h, device);
 }
@@ -188,7 +174,7 @@ function drawTerminals(ctx, x, y, w, h, device) {
 
   for (let i = 1; i <= count; i++) {
     ctx.beginPath();
-    ctx.arc(x + gap * i, y + h - 28, 2.5, 0, Math.PI * 2);
+    ctx.arc(x + gap * i, y + h - 30, 2.8, 0, Math.PI * 2);
     ctx.fill();
   }
 }
@@ -223,7 +209,7 @@ function drawBusCable(ctx, panel) {
     const box = getDeviceDrawBox(item.device, item.rail);
 
     const cx = box.x + box.w / 2;
-    const cy = box.y + box.h + 8;
+    const cy = box.y + box.h + 12;
 
     if (index === 0) ctx.moveTo(cx, cy);
     else ctx.lineTo(cx, cy);
