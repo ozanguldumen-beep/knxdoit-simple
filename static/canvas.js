@@ -35,7 +35,17 @@ function drawWorkspace(ctx, panel) {
 }
 
 function drawPanelBox(ctx, panel) {
-  roundRect(ctx, 25, 25, panel.width - 50, panel.height - 50, 22, "#ffffff", "#94a3b8", 2);
+  roundRect(
+    ctx,
+    25,
+    25,
+    panel.width - 50,
+    panel.height - 50,
+    22,
+    "#ffffff",
+    "#94a3b8",
+    2
+  );
 
   ctx.fillStyle = "#0f172a";
   ctx.font = "700 30px Arial";
@@ -54,14 +64,36 @@ function drawRails(ctx, panel) {
 }
 
 function drawDinRail(ctx, rail) {
-  roundRect(ctx, rail.x - 10, rail.y - 8, rail.width + 20, rail.height + 16, 7, "#dbeafe", "#dbeafe", 1);
-  roundRect(ctx, rail.x, rail.y, rail.width, rail.height, 4, "#94a3b8", "#64748b", 1);
+  roundRect(
+    ctx,
+    rail.x - 10,
+    rail.y - 8,
+    rail.width + 20,
+    rail.height + 16,
+    7,
+    "#dbeafe",
+    "#dbeafe",
+    1
+  );
+
+  roundRect(
+    ctx,
+    rail.x,
+    rail.y,
+    rail.width,
+    rail.height,
+    4,
+    "#94a3b8",
+    "#64748b",
+    1
+  );
 
   ctx.strokeStyle = "#64748b";
   ctx.lineWidth = 1;
 
   for (let i = 0; i <= rail.slots; i++) {
     const x = rail.x + i * PANEL_CONFIG.moduleUnit;
+
     ctx.beginPath();
     ctx.moveTo(x, rail.y + 3);
     ctx.lineTo(x, rail.y + rail.height - 3);
@@ -98,7 +130,17 @@ function getDeviceDrawBox(device, rail) {
 function drawDevice(ctx, device, rail) {
   const { x, y, w, h } = getDeviceDrawBox(device, rail);
 
-  roundRect(ctx, x, y, w, h, 7, device.color || "#2563eb", "#1e293b", 2);
+  roundRect(
+    ctx,
+    x,
+    y,
+    w,
+    h,
+    7,
+    device.color || "#2563eb",
+    "#1e293b",
+    2
+  );
 
   ctx.fillStyle = "rgba(255,255,255,0.14)";
   ctx.fillRect(x + 4, y + 5, Math.max(0, w - 8), 22);
@@ -114,7 +156,17 @@ function drawDevice(ctx, device, rail) {
 }
 
 function drawTerminals(ctx, x, y, w, h, device) {
-  const count = Math.min(10, Math.max(2, device.terminals?.outputs?.length || device.channels || device.moduleWidth || 2));
+  const count = Math.min(
+    10,
+    Math.max(
+      2,
+      device.terminals?.outputs?.length ||
+        device.channels ||
+        device.moduleWidth ||
+        2
+    )
+  );
+
   const gap = w / (count + 1);
 
   ctx.fillStyle = "#ffffff";
@@ -124,6 +176,45 @@ function drawTerminals(ctx, x, y, w, h, device) {
     ctx.arc(x + gap * i, y + h - 30, 2.8, 0, Math.PI * 2);
     ctx.fill();
   }
+}
+
+function drawBusCable(ctx, panel) {
+  const busDevices = [];
+
+  panel.rails.forEach((rail) => {
+    rail.modules.forEach((device) => {
+      if (
+        [
+          "power_supply",
+          "interface",
+          "actuator",
+          "dimmer",
+          "curtain_actuator"
+        ].includes(device.type)
+      ) {
+        busDevices.push({ device, rail });
+      }
+    });
+  });
+
+  if (busDevices.length < 2) return;
+
+  ctx.strokeStyle = "#dc2626";
+  ctx.lineWidth = 2;
+  ctx.setLineDash([6, 5]);
+  ctx.beginPath();
+
+  busDevices.forEach((item, index) => {
+    const box = getDeviceDrawBox(item.device, item.rail);
+    const cx = box.x + box.w / 2;
+    const cy = box.y + box.h + 12;
+
+    if (index === 0) ctx.moveTo(cx, cy);
+    else ctx.lineTo(cx, cy);
+  });
+
+  ctx.stroke();
+  ctx.setLineDash([]);
 }
 
 function getAllConnectedDevices(panel) {
@@ -147,10 +238,15 @@ function getAllConnectedDevices(panel) {
   return list;
 }
 
+function getFieldBaseY(panel) {
+  const lastRail = panel.rails[panel.rails.length - 1];
+  return lastRail.y + 95;
+}
+
 function getLoadPosition(panel, itemIndex) {
-  const startX = 80;
-  const startY = panel.height - 190;
-  const gapX = 125;
+  const startX = 90;
+  const startY = getFieldBaseY(panel) + 45;
+  const gapX = 130;
   const gapY = 82;
   const perRow = 6;
 
@@ -164,14 +260,9 @@ function getLoadPosition(panel, itemIndex) {
 }
 
 function drawFieldLoads(ctx, panel) {
-  const loads = getAllConnectedDevices(panel);
-
-  if (loads.length === 0) {
-    drawFieldAreaTitle(ctx, panel);
-    return;
-  }
-
   drawFieldAreaTitle(ctx, panel);
+
+  const loads = getAllConnectedDevices(panel);
 
   loads.forEach((item, index) => {
     const pos = getLoadPosition(panel, index);
@@ -180,7 +271,7 @@ function drawFieldLoads(ctx, panel) {
 }
 
 function drawFieldAreaTitle(ctx, panel) {
-  const y = panel.height - 230;
+  const y = getFieldBaseY(panel);
 
   ctx.strokeStyle = "#cbd5e1";
   ctx.lineWidth = 1;
@@ -243,56 +334,28 @@ function drawLoadCables(ctx, panel) {
     const loadPos = getLoadPosition(panel, index);
 
     const fromX = deviceBox.x + deviceBox.w / 2;
-    const fromY = deviceBox.y + deviceBox.h;
+    const fromY = deviceBox.y + deviceBox.h + 5;
+
     const toX = loadPos.x + 46;
     const toY = loadPos.y;
 
+    const midY = Math.max(fromY + 35, toY - 35);
+
     ctx.strokeStyle = "#111827";
-    ctx.lineWidth = 1.8;
+    ctx.lineWidth = 2;
     ctx.setLineDash([]);
 
     ctx.beginPath();
     ctx.moveTo(fromX, fromY);
-    ctx.lineTo(fromX, fromY + 24);
-    ctx.lineTo(toX, fromY + 24);
+    ctx.lineTo(fromX, midY);
+    ctx.lineTo(toX, midY);
     ctx.lineTo(toX, toY);
     ctx.stroke();
 
     ctx.fillStyle = "#111827";
     ctx.font = "10px Arial";
-    ctx.fillText(`CH${item.connection.channel}`, toX + 5, toY - 6);
+    ctx.fillText(`CH${item.connection.channel}`, toX + 6, toY - 6);
   });
-}
-
-function drawBusCable(ctx, panel) {
-  const busDevices = [];
-
-  panel.rails.forEach((rail) => {
-    rail.modules.forEach((device) => {
-      if (["power_supply", "interface", "actuator", "dimmer", "curtain_actuator"].includes(device.type)) {
-        busDevices.push({ device, rail });
-      }
-    });
-  });
-
-  if (busDevices.length < 2) return;
-
-  ctx.strokeStyle = "#dc2626";
-  ctx.lineWidth = 2;
-  ctx.setLineDash([6, 5]);
-  ctx.beginPath();
-
-  busDevices.forEach((item, index) => {
-    const box = getDeviceDrawBox(item.device, item.rail);
-    const cx = box.x + box.w / 2;
-    const cy = box.y + box.h + 12;
-
-    if (index === 0) ctx.moveTo(cx, cy);
-    else ctx.lineTo(cx, cy);
-  });
-
-  ctx.stroke();
-  ctx.setLineDash([]);
 }
 
 function roundRect(ctx, x, y, w, h, r, fill, stroke, lineWidth = 1) {
