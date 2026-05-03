@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Yeni Proje{% endblock %}
+{% block content %}
+<div class="designer-shell">
+  <aside class="sidebar">
+    <div class="side-title">Ürün Kütüphanesi</div>
+    <button class="menu-title" data-toggle="knxProducts">▸ Pano KNX Ürünleri</button>
+    <div id="knxProducts" class="menu-list"></div>
+    <button class="menu-title" data-toggle="actuators">▸ Aktüatörler</button>
+    <div id="actuators" class="menu-list"></div>
+    <button class="menu-title" data-toggle="loads">▸ Saha Yükleri</button>
+    <div id="loads" class="menu-list"></div>
+    <button class="menu-title" data-toggle="fieldKnx">▸ KNX Saha Cihazları</button>
+    <div id="fieldKnx" class="menu-list"></div>
+    <div class="actions-grid">
+      <button id="clearPanel" class="soft-btn">Pano Temizle</button>
+      <button id="saveProject" class="soft-btn">Projeyi Kaydet</button>
+      <button id="downloadPdf" class="blue-btn">PDF Çıktı</button>
+      <button id="downloadKnx" class="green-btn">.knxproj</button>
+    </div>
+    <div class="status-box"><h3>Durum</h3><div id="statusText">Sistem hazır.</div></div>
+  </aside>
+
+  <main class="workspace">
+    <header class="project-topbar">
+      <div><h1>Gerçek Pano Görünümü</h1><p>Ürün ekle, yük bağla, grup adreslerini otomatik üret.</p></div>
+      <div class="metrics"><span>Ürün: <b id="deviceCount">0</b></span><span>GA: <b id="gaCount">0</b></span></div>
+      <select id="etsVersion"><option>ETS6</option><option>ETS5</option></select>
+    </header>
+    <div class="canvas-wrap"><canvas id="panelCanvas"></canvas></div>
+  </main>
+
+  <aside class="ga-panel">
+    <h2>Grup Adresleri</h2>
+    <div id="gaList" class="ga-list">Cihaz ve bağlantı ekleyince oluşacak.</div>
+  </aside>
+</div>
+<script>window.KNXDOIT_PROJECT_NAME = {{ project_name|tojson }};</script>
+<script type="module" src="/static/app.js"></script>
+{% endblock %}

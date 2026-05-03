@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Kayıt Ol{% endblock %}
+{% block content %}
+<div class="auth-card">
+  <h2>7 Gün Ücretsiz Dene</h2>
+  <p>Kredi kartı gerekmez. Trial: 3 proje.</p>
+  <form method="POST">
+    <label>Email</label><input type="email" name="email" required>
+    <label>Şifre</label><input type="password" name="password" minlength="6" required>
+    <button class="btn" type="submit">Hesap Oluştur</button>
+  </form>
+  <p>Zaten hesabın var mı? <a href="/login">Giriş yap</a></p>
+</div>
+{% endblock %}
