@@ -23,6 +23,7 @@ export const DEVICES = {
     type: "actuator",
     category: "actuators",
     moduleWidth: 8,
+    channels: 8,
     color: "#16a34a",
     terminals: { power: ["L", "N"], bus: ["KNX+", "KNX-"], outputs: ["CH1", "CH2", "CH3", "CH4", "CH5", "CH6", "CH7", "CH8"] }
   },
@@ -32,6 +33,7 @@ export const DEVICES = {
     type: "dimmer",
     category: "actuators",
     moduleWidth: 6,
+    channels: 4,
     color: "#f97316",
     terminals: { power: ["L", "N"], bus: ["KNX+", "KNX-"], outputs: ["D1", "D2", "D3", "D4"] }
   },
@@ -41,6 +43,7 @@ export const DEVICES = {
     type: "curtain_actuator",
     category: "actuators",
     moduleWidth: 8,
+    channels: 4,
     color: "#0f766e",
     terminals: { power: ["L", "N"], bus: ["KNX+", "KNX-"], outputs: ["CH1-UP", "CH1-DOWN", "CH2-UP", "CH2-DOWN", "CH3-UP", "CH3-DOWN", "CH4-UP", "CH4-DOWN"] }
   },
@@ -73,22 +76,19 @@ export const DEVICES = {
   }
 };
 
-export function getDeviceTemplate(deviceId) {
-  return DEVICES[deviceId] || null;
-}
-
 export function getDevicesByCategory(category) {
-  return Object.values(DEVICES).filter(device => device.category === category);
+  return Object.values(DEVICES).filter((device) => device.category === category);
 }
 
 export function createDeviceInstance(deviceId) {
-  const template = getDeviceTemplate(deviceId);
+  const template = DEVICES[deviceId];
   if (!template) throw new Error("Cihaz bulunamadı: " + deviceId);
 
   return {
     ...template,
-    instanceId: `${deviceId}_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+    instanceId: `${deviceId}_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
     railId: null,
+    slotStart: 0,
     x: 0,
     y: 0,
     width: 0,
