@@ -1,119 +1,62 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KNXdoit v12</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
 <body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">KNX</div>
+        <div>
+          <h1>KNXdoit v12</h1>
+          <p>Panel + çizim + ürün ekleme</p>
+        </div>
+      </div>
 
-<h1>KNX Panel</h1>
+      <section class="menu-section">
+        <button class="menu-title" data-toggle="knxProducts">▸ KNX Ürünler</button>
+        <div id="knxProducts" class="menu-list hidden"></div>
+      </section>
 
-<div style="display:flex">
+      <section class="menu-section">
+        <button class="menu-title" data-toggle="actuators">▸ Aktüatörler</button>
+        <div id="actuators" class="menu-list hidden"></div>
+      </section>
 
-  <!-- SOL MENÜ -->
-  <div style="width:250px; padding:10px; background:#111; color:white">
+      <section class="menu-section">
+        <button class="menu-title" data-toggle="loads">▸ Yük / Cihazlar</button>
+        <div id="loads" class="menu-list hidden"></div>
+      </section>
 
-    <h3 id="toggleActuator" style="cursor:pointer">
-      ▶ Aktüatörler
-    </h3>
+      <section class="actions">
+        <button id="clearPanel" class="secondary-btn">Pano Temizle</button>
+        <button id="downloadPdf" class="primary-btn">PDF Çıktı</button>
+      </section>
 
-    <div id="actuatorList" style="display:none"></div>
+      <section class="status-box">
+        <h3>Durum</h3>
+        <div id="statusText">Sistem hazır.</div>
+      </section>
+    </aside>
 
+    <main class="workspace">
+      <header class="topbar">
+        <div>
+          <h2>Gerçek Pano Görünümü</h2>
+          <p>DIN raylara ürün ekleyerek KNX pano yerleşimini oluştur.</p>
+        </div>
+      </header>
+
+      <div class="canvas-wrap">
+        <canvas id="panelCanvas"></canvas>
+      </div>
+    </main>
   </div>
 
-  <!-- SAHNE -->
-  <canvas id="panelCanvas"></canvas>
-
-</div>
-
-<script type="module">
-  import { createPanel } from "./panel.js";
-  import { drawPanel } from "./canvas.js";
-  import { initUI } from "./ui.js";
-
-  const panel = createPanel(3);
-  const canvas = document.getElementById("panelCanvas");
-
-  drawPanel(canvas, panel);
-  initUI(panel, canvas);
-</script>
-
-</body>    </details>
-
-    <details open>
-      <summary>▼ Hatlar</summary>
-      <button id="btn-energy" onclick="setTool('energy')">220V / Yük Hattı</button>
-      <button id="btn-knx" onclick="setTool('knx')">KNX Bus T Bağlantı</button>
-      <button id="btn-delete" onclick="setTool('delete')">Silme Modu</button>
-    </details>
-
-    <details open>
-      <summary>▼ Projeler / Çıktılar</summary>
-      <button onclick="validateAndShow()">Projeyi Kontrol Et</button>
-      <button onclick="saveProject()">Projeyi Kaydet</button>
-      <button onclick="showProjects()">Kayıtlı Projeler</button>
-      <button onclick="generateGA()">Grup Adresi Oluştur</button>
-      <button onclick="downloadPdf()">PDF Kablo Çıktısı</button>
-      <button onclick="clearCurrent()">Ekranı Temizle</button>
-    </details>
-  </aside>
-
-  <main class="workspace">
-    <header>
-      <div>
-        <h2 id="titleProject">Villa Projesi</h2>
-        <span id="status">Kaydedilmedi</span>
-      </div>
-      <div class="toolbar">
-        <button class="mini" onclick="zoomOut()">−</button>
-        <span id="zoomLabel">100%</span>
-        <button class="mini" onclick="zoomIn()">+</button>
-        <button class="mini wide" onclick="toggleRightbar()">Sağ Panel</button>
-      </div>
-      <div class="validation-pill" id="validationPill">Kontrol bekliyor</div>
-      <div class="legend">
-        <span><b class="brown"></b> Enerji</span>
-        <span><b class="green"></b> KNX</span>
-        <span><b class="orange"></b> Kuru Kontak</span>
-      </div>
-    </header>
-
-    <div id="canvas" class="canvas">
-      <div id="zoomLayer" class="zoom-layer">
-        <svg id="wires"></svg>
-      </div>
-    </div>
-  </main>
-
-  <aside class="rightbar" id="rightbar">
-    <div class="tabs">
-      <button class="tab active" onclick="showTab('projects', event)">Projeler</button>
-      <button class="tab" onclick="showTab('ga', event)">GA</button>
-      <button class="tab" onclick="showTab('bom', event)">Ürün</button>
-      <button class="tab" onclick="showTab('wires', event)">Bağlantı</button>
-      <button class="tab" onclick="showTab('validation', event)">Kontrol</button>
-    </div>
-
-    <section id="tab-projects" class="tab-panel active">
-      <h3>Kayıtlı Projeler</h3>
-      <div id="projectList" class="panel-list">Henüz liste yok.</div>
-    </section>
-
-    <section id="tab-ga" class="tab-panel">
-      <h3>Grup Adresleri</h3>
-      <div id="gaList" class="panel-list">Henüz oluşturulmadı.</div>
-    </section>
-
-    <section id="tab-bom" class="tab-panel">
-      <h3>Ürün Listesi</h3>
-      <div id="bomList" class="panel-list">Henüz ürün yok.</div>
-    </section>
-
-    <section id="tab-wires" class="tab-panel">
-      <h3>Bağlantılar</h3>
-      <div id="wireList" class="panel-list">Henüz bağlantı yok.</div>
-    </section>
-
-    <section id="tab-validation" class="tab-panel">
-      <h3>Proje Kontrol</h3>
-      <div id="validationList" class="panel-list">Henüz kontrol edilmedi.</div>
-    </section>
-  </aside>
-</div>
-<script src="/static/app.js"></script>
+  <script type="module" src="/static/app.js"></script>
 </body>
 </html>

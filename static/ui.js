@@ -1,42 +1,81 @@
-import { createDeviceInstance } from "./devices.js";
-import { autoPlaceDevice } from "./panel.js";
+import { getDevicesByCategory, createDeviceInstance } from "./devices.js";
+import { autoPlaceDevice, clearPanel } from "./panel.js";
 import { drawPanel } from "./canvas.js";
 
+const CATEGORY_MAP = {
+  knxProducts: "KNX Ürünler",
+  actuators: "Aktüatörler",
+  loads: "Yük / Cihazlar"
+};
+
 export function initUI(panel, canvas) {
+  renderDeviceLists(panel, canvas);
+  bindMenuToggles();
+  bindActions(panel, canvas);
+  setStatus("Ürün menüleri hazır. Başlığa tıklayıp ürün ekleyebilirsin.");
+}
 
-  // Aktüatör butonları oluştur
-  const actuatorContainer = document.getElementById("actuatorList");
+function renderDeviceLists(panel, canvas) {
+  Object.keys(CATEGORY_MAP).forEach(category => {
+    const container = document.getElementById(category);
+    if (!container) return;
+    container.innerHTML = "";
 
-  const devices = [
-    { id: "knx_power_supply", name: "Power Supply" },
-    { id: "knx_ip_interface", name: "IP Interface" },
-    { id: "relay_actuator_8ch", name: "8CH Aktüatör" },
-    { id: "dimmer_4ch", name: "Dimmer" }
-  ];
-
-  devices.forEach(d => {
-    const btn = document.createElement("button");
-    btn.innerText = d.name;
-    btn.style.display = "block";
-    btn.style.margin = "5px 0";
-
-    btn.onclick = () => {
-      const device = createDeviceInstance(d.id);
-      autoPlaceDevice(panel, device);
-      drawPanel(canvas, panel);
-    };
-
-    actuatorContainer.appendChild(btn);
+    const devices = getDevicesByCategory(category);
+    devices.forEach(device => {
+      const button = document.createElement("button");
+      button.className = "device-btn";
+      button.innerHTML = `<span>${device.name}</span><small>${device.moduleWidth}M</small>`;
+      button.addEventListener("click", () => addDeviceToPanel(panel, canvas, device.id));
+      container.appendChild(button);
+    });
   });
+}
 
-  // Menü aç/kapat
-  const toggle = document.getElementById("toggleActuator");
+function bindMenuToggles() {
+  document.querySelectorAll("[data-toggle]").forEach(button => {
+    button.addEventListener("click", () => {
+      const targetId = button.getAttribute("data-toggle");
+      const target = document.getElementById(targetId);
+      if (!target) return;
+      target.classList.toggle("hidden");
+      button.textContent = `${target.classList.contains("hidden") ? "▸" : "▾"} ${CATEGORY_MAP[targetId] || targetId}`;
+    });
+  });
+}
 
-  toggle.onclick = () => {
-    if (actuatorContainer.style.display === "none") {
-      actuatorContainer.style.display = "block";
-    } else {
-      actuatorContainer.style.display = "none";
-    }
-  };
+function bindActions(panel, canvas) {
+  const clearButton = document.getElementById("clearPanel");
+  if (clearButton) {
+    clearButton.addEventListener("click", () => {
+      clearPanel(panel);
+      drawPanel(canvas, panel);
+      setStatus("Pano temizlendi.");
+    });
+  }
+
+  const pdfButton = document.getElementById("downloadPdf");
+  if (pdfButton) {
+    pdfButton.addEventListener("click", () => {
+      setStatus("PDF modülü bir sonraki aşamada bağlanacak.");
+    });
+  }
+}
+
+function addDeviceToPanel(panel, canvas, deviceId) {
+  try {
+    const device = createDeviceInstance(deviceId);
+    const placed = autoPlaceDevice(panel, device);
+    drawPanel(canvas, panel);
+    setStatus(`${placed.name} panoya eklendi.`);
+  } catch (error) {
+    setStatus(error.message, true);
+  }
+}
+
+function setStatus(message, isError = false) {
+  const status = document.getElementById("statusText");
+  if (!status) return;
+  status.textContent = message;
+  status.className = isError ? "error" : "";
 }
