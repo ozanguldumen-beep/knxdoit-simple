@@ -1,3 +1,5 @@
+// static/devices.js
+
 export const DEVICES = {
   system: [
     {
