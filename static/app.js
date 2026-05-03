@@ -28,18 +28,14 @@ const catalog = {
   valve:{icon:"🚰", name:"Vana", kind:"energy", load:0.5},
   door:{icon:"🚪", name:"Kapı", kind:"energy", load:1},
   motor_valve:{icon:"⚙️", name:"Motorlu Vana", kind:"energy", load:1},
-  onoff:{icon:"🔴", name:"ON/OFF Cihaz", kind:"energy", load:1},
-  fridge:{icon:"🧊", name:"Buzdolabı", kind:"direct", directPower:true},
-  washer:{icon:"🧺", name:"Çamaşır Makinesi", kind:"direct", directPower:true},
-  dishwasher:{icon:"🍽️", name:"Bulaşık Makinesi", kind:"direct", directPower:true},
-  modem:{icon:"🌐", name:"Modem", kind:"direct", directPower:true},
+  onoff:{icon:"🔴", name:"ON/OFF Cihaz", kind:"energy", load:1},  dish  modem:{icon:"🌐", name:"Modem", kind:"direct", directPower:true},
   collector:{icon:"🔥", name:"Yerden Isıtma Kollektörü", kind:"collector"}
 };
 
 const groups = {
   knxProducts:["knx_switch_1","knx_switch_2","knx_switch_4","knx_switch_6","knx_switch_8","knx_thermostat","knx_sensor","ip_router","power_supply","knx_thermo_switch","line_coupler","binary_input","aircon_gateway"],
   actuatorProducts:["switch_actuator_8","switch_actuator_12","switch_actuator_16","switch_actuator_24","dimmer_actuator_2","dimmer_actuator_4","dimmer_actuator_8","rgbw_actuator"],
-  energyProducts:["lamp","dim_lamp","blind","valve","collector","motor_valve","onoff","boiler","aircon_direct","fridge","washer","dishwasher","modem"]
+  energyProducts:["lamp","dim_lamp","blind","valve","collector","motor_valve","onoff","boiler","aircon_direct","modem"]
 };
 
 let state = {
@@ -412,7 +408,7 @@ function isLoad(t){
   return ["lamp","dim_lamp","blind","valve","door","motor_valve","onoff"].includes(t);
 }
 function isDirectPowered(t){
-  return ["aircon_direct","boiler","fridge","washer","dishwasher","modem","aircon_gateway"].includes(t);
+  return ["aircon_direct","boiler","modem","aircon_gateway"].includes(t);
 }
 function isKnxOnly(t){
   const meta=catalog[t];

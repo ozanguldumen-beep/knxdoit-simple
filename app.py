@@ -128,7 +128,7 @@ def draw_pdf_schematic(c, data, y_start):
 def draw_pdf_wiring(c, data, y_start):
     c.setFont(FONT_BOLD, 14)
     c.setFillColor(colors.black)
-    c.drawString(30, y_start, "1. Elektrikçi Şeması: KNX Bus ve 220V Enerji Bağlantıları")
+    c.drawString(30, y_start, "1. Elektrikçi Şeması: KNX Bus + 220V Enerji + Saha Bağlantıları")
 
     wires = data.get("wires", [])
     node_map = {}
