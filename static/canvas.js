@@ -23,6 +23,7 @@ function setupCanvas(canvas, width, height) {
   const ctx = canvas.getContext("2d");
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   ctx.clearRect(0, 0, width, height);
+
   return ctx;
 }
 
@@ -112,7 +113,6 @@ function drawDevices(ctx, panel) {
   });
 }
 
-/* 🔥 BURASI KRİTİK FIX */
 function getDeviceDrawBox(device, rail) {
   const moduleWidth = device.moduleWidth || 2;
   const w = moduleWidth * PANEL_CONFIG.moduleUnit - 4;
@@ -126,8 +126,13 @@ function getDeviceDrawBox(device, rail) {
 
   const x = rail.x + slot * PANEL_CONFIG.moduleUnit + 2;
 
-  // 🔥 DOĞRU HİZALAMA (artık başlığa girmez)
-  const y = rail.y - 48;
+  /*
+    GEÇİCİ SAĞLAM FIX:
+    Cihaz artık DIN rayın üstüne değil,
+    rayın biraz altına çiziliyor.
+    Böylece KNX Pano başlığına binmez.
+  */
+  const y = rail.y + 20;
 
   return { x, y, w, h };
 }
