@@ -112,6 +112,7 @@ function drawDevices(ctx, panel) {
   });
 }
 
+/* 🔥 BURASI KRİTİK FIX */
 function getDeviceDrawBox(device, rail) {
   const moduleWidth = device.moduleWidth || 2;
   const w = moduleWidth * PANEL_CONFIG.moduleUnit - 4;
@@ -125,13 +126,8 @@ function getDeviceDrawBox(device, rail) {
 
   const x = rail.x + slot * PANEL_CONFIG.moduleUnit + 2;
 
-  /*
-    ÖNEMLİ DÜZELTME:
-    Cihaz artık panel başlığına göre değil,
-    ait olduğu DIN rayına göre çiziliyor.
-    Böylece cihaz başlığın üzerine binmez.
-  */
-  const y = rail.y - h - 14;
+  // 🔥 DOĞRU HİZALAMA (artık başlığa girmez)
+  const y = rail.y - 48;
 
   return { x, y, w, h };
 }
