@@ -1,19 +1,21 @@
+// static/panel.js
+
 export const PANEL_CONFIG = {
-  width: 1000,
-  height: 1180,
-  padding: 60,
-  topOffset: 135,
-  railCount: 5,
-  slotsPerRail: 48,
+  width: 980,
+  height: 980,
+  padding: 70,
+  headerSafeTop: 150,
+
+  railSlots: 48,
   moduleUnit: 18,
   railHeight: 28,
-  railGap: 190,
+  railGap: 170,
+
   deviceHeight: 86,
-  deviceGap: 3
+  deviceGapSlot: 0
 };
 
-export function createPanel(rowCount = PANEL_CONFIG.railCount) {
-  const railWidth = PANEL_CONFIG.slotsPerRail * PANEL_CONFIG.moduleUnit;
+export function createPanel(rowCount = 5) {
   const rails = [];
 
   for (let i = 0; i < rowCount; i++) {
@@ -21,10 +23,10 @@ export function createPanel(rowCount = PANEL_CONFIG.railCount) {
       id: `rail-${i + 1}`,
       name: `${i + 1}. DIN Ray`,
       x: PANEL_CONFIG.padding,
-      y: PANEL_CONFIG.topOffset + i * PANEL_CONFIG.railGap,
-      width: railWidth,
+      y: PANEL_CONFIG.headerSafeTop + i * PANEL_CONFIG.railGap,
+      width: PANEL_CONFIG.railSlots * PANEL_CONFIG.moduleUnit,
       height: PANEL_CONFIG.railHeight,
-      slots: PANEL_CONFIG.slotsPerRail,
+      slots: PANEL_CONFIG.railSlots,
       modules: []
     });
   }
@@ -38,50 +40,59 @@ export function createPanel(rowCount = PANEL_CONFIG.railCount) {
   };
 }
 
-function overlaps(aStart, aWidth, bStart, bWidth) {
-  return aStart < bStart + bWidth && aStart + aWidth > bStart;
+export function getModulePixelWidth(moduleWidth) {
+  return moduleWidth * PANEL_CONFIG.moduleUnit;
 }
 
-export function findFreeSlot(rail, moduleWidth) {
-  for (let slot = 0; slot <= rail.slots - moduleWidth; slot++) {
-    const busy = rail.modules.some((device) =>
-      overlaps(slot, moduleWidth, device.slotStart, device.moduleWidth)
-    );
-    if (!busy) return slot;
-  }
-  return -1;
+export function getRailUsedSlots(rail) {
+  return rail.modules.reduce((total, device) => {
+    return total + (device.moduleWidth || 2) + PANEL_CONFIG.deviceGapSlot;
+  }, 0);
+}
+
+export function canPlaceDeviceOnRail(rail, device) {
+  const usedSlots = getRailUsedSlots(rail);
+  const neededSlots = device.moduleWidth || 2;
+
+  return usedSlots + neededSlots <= rail.slots;
+}
+
+export function findFirstAvailableRail(panel, device) {
+  return panel.rails.find((rail) => canPlaceDeviceOnRail(rail, device)) || null;
 }
 
 export function autoPlaceDevice(panel, device) {
-  const moduleWidth = Number(device.moduleWidth || 2);
+  const rail = findFirstAvailableRail(panel, device);
 
-  for (const rail of panel.rails) {
-    const slotStart = findFreeSlot(rail, moduleWidth);
-    if (slotStart !== -1) {
-      const placedDevice = {
-        ...device,
-        moduleWidth,
-        railId: rail.id,
-        slotStart,
-        x: rail.x + slotStart * PANEL_CONFIG.moduleUnit,
-        y: rail.y - PANEL_CONFIG.deviceHeight - 12,
-        width: moduleWidth * PANEL_CONFIG.moduleUnit - PANEL_CONFIG.deviceGap,
-        height: PANEL_CONFIG.deviceHeight
-      };
-      rail.modules.push(placedDevice);
-      return placedDevice;
-    }
+  if (!rail) {
+    throw new Error("Panoda yeterli boş DIN ray alanı yok.");
   }
 
-  throw new Error("Panoda yeterli boş DIN ray alanı yok.");
+  const startSlot = getRailUsedSlots(rail);
+  const moduleWidth = device.moduleWidth || 2;
+
+  const placedDevice = {
+    ...device,
+    railId: rail.id,
+    startSlot,
+    slot: startSlot,
+    moduleWidth,
+
+    x: rail.x + startSlot * PANEL_CONFIG.moduleUnit,
+    y: rail.y - Math.round((PANEL_CONFIG.deviceHeight - rail.height) / 2),
+
+    width: getModulePixelWidth(moduleWidth),
+    height: PANEL_CONFIG.deviceHeight
+  };
+
+  rail.modules.push(placedDevice);
+  return placedDevice;
 }
 
 export function clearPanel(panel) {
   panel.rails.forEach((rail) => {
     rail.modules = [];
   });
-}
 
-export function getAllDevices(panel) {
-  return panel.rails.flatMap((rail) => rail.modules);
+  return panel;
 }
