@@ -1,0 +1,29 @@
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; font-family: Arial, sans-serif; background: #e5e7eb; color: #0f172a; }
+.app-shell { display: flex; min-height: 100vh; }
+.sidebar { width: 330px; flex: 0 0 330px; background: #111827; color: #fff; padding: 18px; overflow-y: auto; }
+.brand { display: flex; gap: 14px; align-items: center; padding-bottom: 22px; margin-bottom: 12px; border-bottom: 1px solid #374151; }
+.brand-mark { width: 62px; height: 62px; border-radius: 16px; background: #2563eb; display: grid; place-items: center; font-size: 22px; font-weight: 800; }
+.brand h1 { margin: 0; font-size: 24px; }
+.brand p { margin: 5px 0 0; color: #9ca3af; font-size: 14px; }
+.menu-section { border-bottom: 1px solid #374151; padding: 14px 0; }
+.menu-title { width: 100%; background: transparent; color: #fff; border: 0; text-align: left; font-size: 18px; font-weight: 800; cursor: pointer; padding: 8px 0; }
+.menu-list { display: grid; gap: 10px; margin-top: 10px; }
+.hidden { display: none; }
+.device-btn { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 10px; background: #1f2937; color: #fff; border: 1px solid #374151; border-radius: 12px; padding: 13px 14px; cursor: pointer; text-align: left; font-size: 14px; font-weight: 700; }
+.device-btn:hover { background: #2563eb; border-color: #60a5fa; }
+.device-btn small { color: #d1d5db; font-weight: 800; }
+.actions { display: grid; gap: 10px; margin: 22px 0; }
+.primary-btn, .secondary-btn { border: 0; border-radius: 12px; padding: 14px; cursor: pointer; font-weight: 800; font-size: 14px; }
+.primary-btn { background: #16a34a; color: white; }
+.secondary-btn { background: #374151; color: white; }
+.status-box { background: #0b1220; border: 1px solid #374151; border-radius: 16px; padding: 15px; margin-top: 12px; }
+.status-box h3 { margin: 0 0 10px; font-size: 16px; }
+#statusText { color: #d1d5db; font-size: 14px; line-height: 1.4; }
+#statusText.error { color: #fca5a5; }
+.workspace { flex: 1; min-width: 0; background: #e5e7eb; overflow: auto; }
+.topbar { padding: 20px 28px; background: #ffffff; border-bottom: 1px solid #cbd5e1; position: sticky; top: 0; z-index: 3; }
+.topbar h2 { margin: 0; font-size: 28px; }
+.topbar p { margin: 6px 0 0; color: #64748b; font-size: 16px; }
+.canvas-wrap { padding: 28px; min-width: 1020px; display: flex; justify-content: center; align-items: flex-start; }
+canvas { background: #fff; border-radius: 20px; box-shadow: 0 20px 45px rgba(15,23,42,.18); }
