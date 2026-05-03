@@ -3,6 +3,23 @@ import { collectConnections } from "./rules.js";
 
 const DPR = window.devicePixelRatio || 1;
 
+export function setCanvasZoom(canvas, percent = 100) {
+  if (!canvas) return;
+  const zoom = Math.max(50, Math.min(150, Number(percent) || 100));
+  canvas.dataset.zoom = String(zoom);
+  canvas.style.transformOrigin = "top left";
+  canvas.style.transform = `scale(${zoom / 100})`;
+  const wrap = canvas.closest(".canvas-wrap");
+  if (wrap) {
+    wrap.style.setProperty("--canvas-zoom", String(zoom / 100));
+  }
+}
+
+export function getCanvasZoom(canvas) {
+  return Number(canvas?.dataset?.zoom || 100);
+}
+
+
 export function drawPanel(canvas, panel) {
   if (!canvas || !panel) return;
   const ctx = setupCanvas(canvas, panel.width, panel.height);

@@ -1,7 +1,7 @@
 import { autoPlaceDevice, addFieldDevice, clearPanel, flattenPanelDevices } from "./panel.js";
-import { drawPanel } from "./canvas.js";
+import { drawPanel, setCanvasZoom, getCanvasZoom } from "./canvas.js";
 import { fetchDevices } from "./devices.js";
-import { isPanelDevice, isLoadDevice, isFieldKnxDevice, connectDevice, collectConnections } from "./rules.js";
+import { isPanelDevice, isLoadDevice, isFieldKnxDevice, connectDevice, validatePanel } from "./rules.js";
 import { downloadPdf, downloadKnx, saveProject, collectProjectData } from "./pdf.js";
 
 export async function initUI(panel, canvas) {
@@ -12,6 +12,7 @@ export async function initUI(panel, canvas) {
     createMenu("loads", devices.loads || [], panel, canvas);
     createMenu("fieldKnx", devices.fieldKnx || [], panel, canvas);
     bindActions(panel, canvas);
+    bindZoom(canvas);
     await updateGA(panel);
     setStatus("Sistem hazır.");
   } catch (error) {
@@ -59,7 +60,7 @@ async function addLoadDevice(load, panel, canvas) {
   const actuators = flattenPanelDevices(panel).filter((device) => ["actuator", "dimmer", "curtain_actuator"].includes(device.type));
   if (actuators.length === 0) { setStatus("Önce uygun aktüatör eklemelisin.", true); return; }
   for (const actuator of actuators) {
-    const result = connectDevice(actuator, { ...load });
+    const result = connectDevice(actuator, { ...load }, panel);
     if (result.ok) {
       drawPanel(canvas, panel);
       await refresh(panel);
@@ -88,6 +89,44 @@ function bindActions(panel, canvas) {
 async function refresh(panel) {
   document.getElementById("deviceCount").textContent = String(flattenPanelDevices(panel).length + (panel.fieldDevices || []).length);
   await updateGA(panel);
+  updateRuleStatus(panel);
+}
+
+function bindZoom(canvas) {
+  const slider = document.getElementById("zoomRange");
+  const label = document.getElementById("zoomLabel");
+  const minus = document.getElementById("zoomOut");
+  const plus = document.getElementById("zoomIn");
+  const reset = document.getElementById("zoomReset");
+
+  const apply = (value) => {
+    const zoom = Math.max(50, Math.min(150, Number(value) || 100));
+    setCanvasZoom(canvas, zoom);
+    if (slider) slider.value = String(zoom);
+    if (label) label.textContent = `${zoom}%`;
+  };
+
+  slider?.addEventListener("input", () => apply(slider.value));
+  minus?.addEventListener("click", () => apply(getCanvasZoom(canvas) - 10));
+  plus?.addEventListener("click", () => apply(getCanvasZoom(canvas) + 10));
+  reset?.addEventListener("click", () => apply(100));
+  apply(100);
+}
+
+function updateRuleStatus(panel) {
+  const box = document.getElementById("rulesStatus");
+  if (!box) return;
+  const result = validatePanel(panel);
+  const errors = result.errors || [];
+  const warnings = result.warnings || [];
+  if (!errors.length && !warnings.length) {
+    box.innerHTML = `<b>Kurallar:</b> Uygun`;
+    box.classList.remove("has-error");
+    return;
+  }
+  const items = [...errors, ...warnings].slice(0, 3).map((issue) => `<div>Kural ${issue.ruleId}: ${issue.message}</div>`).join("");
+  box.innerHTML = `<b>Kurallar:</b>${items}`;
+  box.classList.toggle("has-error", errors.length > 0);
 }
 
 async function updateGA(panel) {

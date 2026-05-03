@@ -18,13 +18,19 @@
       <button id="downloadPdf" class="blue-btn">PDF Çıktı</button>
       <button id="downloadKnx" class="green-btn">.knxproj</button>
     </div>
-    <div class="status-box"><h3>Durum</h3><div id="statusText">Sistem hazır.</div></div>
+    <div class="status-box"><h3>Durum</h3><div id="statusText">Sistem hazır.</div><div id="rulesStatus" class="rules-status"><b>Kurallar:</b> Uygun</div></div>
   </aside>
 
   <main class="workspace">
     <header class="project-topbar">
       <div><h1>Gerçek Pano Görünümü</h1><p>Ürün ekle, yük bağla, grup adreslerini otomatik üret.</p></div>
       <div class="metrics"><span>Ürün: <b id="deviceCount">0</b></span><span>GA: <b id="gaCount">0</b></span></div>
+      <div class="zoom-toolbar" aria-label="Canvas boyut ayarı">
+        <button id="zoomOut" type="button">−</button>
+        <input id="zoomRange" type="range" min="50" max="150" step="10" value="100" />
+        <button id="zoomIn" type="button">+</button>
+        <button id="zoomReset" type="button" class="zoom-reset"><span id="zoomLabel">100%</span></button>
+      </div>
       <select id="etsVersion"><option>ETS6</option><option>ETS5</option></select>
     </header>
     <div class="canvas-wrap"><canvas id="panelCanvas"></canvas></div>
