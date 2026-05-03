@@ -1,0 +1,5 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<main class="dashboard"><div class="dash-head"><h1>Projelerim</h1><a class="primary-link" href="/project">+ Yeni Proje</a></div>{% if projects %}{% for p in projects %}<div class="project-row"><div><strong>{{ p.name }}</strong><span>{{ p.ets_version }} · {{ p.created_at.strftime('%d.%m.%Y') }}</span></div><span class="pill">{{ p.ets_version }}</span></div>{% endfor %}{% else %}<div class="empty">Henüz proje yok. İlk KNX projenizi oluşturun.</div>{% endif %}</main>
+{% endblock %}

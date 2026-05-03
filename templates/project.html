@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Proje{% endblock %}
+{% block content %}
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand"><div class="brand-mark">KNX</div><div><h1>KNXdoit v13</h1><p>Panel + kurallar + çıktı</p></div></div>
+    <div class="project-fields"><input id="projectName" value="KNXdoit Projesi"><select id="etsVersion"><option>ETS6</option><option>ETS5</option></select></div>
+    <section class="menu-section"><button class="menu-title" data-toggle="knxProducts">▸ KNX Sistem</button><div id="knxProducts" class="menu-list hidden"></div></section>
+    <section class="menu-section"><button class="menu-title" data-toggle="actuators">▸ Aktüatörler</button><div id="actuators" class="menu-list hidden"></div></section>
+    <section class="menu-section"><button class="menu-title" data-toggle="loads">▸ Saha Yükleri</button><div id="loads" class="menu-list hidden"></div></section>
+    <section class="menu-section"><button class="menu-title" data-toggle="fieldDevices">▸ KNX Saha Cihazları</button><div id="fieldDevices" class="menu-list hidden"></div></section>
+    <section class="actions"><button id="clearPanel" class="secondary-btn">Pano Temizle</button><button id="saveProject" class="secondary-btn">Projeyi Kaydet</button><button id="downloadPdf" class="primary-btn">PDF Çıktı</button><button id="downloadKnx" class="primary-btn alt">.knxproj</button></section>
+    <section class="status-box"><h3>Durum</h3><div id="statusText">Sistem hazır.</div></section>
+  </aside>
+  <main class="workspace"><header class="topbar"><div><h2>Gerçek Pano Görünümü</h2><p>Ürün ekle, yük bağla, grup adreslerini otomatik üret.</p></div><div class="summary"><span>Ürün: <b id="deviceCount">0</b></span><span>GA: <b id="gaCount">0</b></span></div></header><div class="canvas-wrap"><canvas id="panelCanvas"></canvas></div></main>
+  <aside class="rightbar"><h3>Grup Adresleri</h3><div id="gaList" class="ga-list">Henüz grup adresi yok.</div></aside>
+</div>
+<script type="module" src="/static/app.js"></script>
+{% endblock %}
