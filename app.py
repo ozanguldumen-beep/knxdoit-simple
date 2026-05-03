@@ -124,6 +124,74 @@ def draw_pdf_schematic(c, data, y_start):
             draw_device(c, x, row_y+55, name, icon)
     return y - min(len(rows),4)*88 - 10
 
+
+def draw_pdf_wiring(c, data, y_start):
+    c.setFont(FONT_BOLD, 14)
+    c.setFillColor(colors.black)
+    c.drawString(30, y_start, "1. Elektrikçi Şeması: KNX Bus ve 220V Enerji Bağlantıları")
+
+    wires = data.get("wires", [])
+    node_map = {}
+    idx = 0
+
+    def add_node(item, label, kind):
+        nonlocal idx
+        key = item.get("id") or item.get("deviceId")
+        if not key or key in node_map:
+            return
+        col = idx % 8
+        row = idx // 8
+        node_map[key] = {"x": 80 + col * 88, "y": y_start - 65 - row * 62, "label": label[:16], "kind": kind}
+        idx += 1
+
+    for w in wires:
+        add_node(w.get("from", {}), w.get("fromLabel","Başlangıç"), w.get("from",{}).get("kind",""))
+        add_node(w.get("to", {}), w.get("toLabel","Bitiş"), w.get("to",{}).get("kind",""))
+
+    bus_y = y_start - 260
+    c.setStrokeColor(colors.HexColor("#0f9d58"))
+    c.setLineWidth(3)
+    c.line(45, bus_y, 790, bus_y)
+    c.setFillColor(colors.HexColor("#0f9d58"))
+    c.setFont(FONT_BOLD, 8)
+    c.drawString(50, bus_y + 8, "KNX BUS")
+
+    for node in node_map.values():
+        x, y = node["x"], node["y"]
+        c.setStrokeColor(colors.black)
+        c.setFillColor(colors.white)
+        c.roundRect(x-27, y-16, 54, 32, 5, stroke=1, fill=1)
+        c.setFillColor(colors.black)
+        c.setFont(FONT_BOLD, 5.7)
+        c.drawCentredString(x, y-24, node["label"])
+        c.setFont(FONT_BOLD, 8)
+        c.drawCentredString(x, y-3, "C")
+
+    for w in wires[:45]:
+        def n(item):
+            return node_map.get(item.get("id")) or node_map.get(item.get("deviceId"))
+        n1, n2 = n(w.get("from", {})), n(w.get("to", {}))
+        if not n1 or not n2:
+            continue
+        x1, y1 = n1["x"], n1["y"]
+        x2, y2 = n2["x"], n2["y"]
+        if w.get("type") == "knx":
+            c.setStrokeColor(colors.HexColor("#0f9d58"))
+            c.setLineWidth(2)
+            c.line(x1, y1-16, x1, bus_y)
+            c.line(x1, bus_y, x2, bus_y)
+            c.line(x2, bus_y, x2, y2-16)
+        else:
+            c.setStrokeColor(colors.HexColor("#c2410c"))
+            c.setLineWidth(2)
+            c.line(x1, y1, x2, y2)
+            c.setFillColor(colors.HexColor("#c2410c"))
+            c.setFont(FONT_BOLD, 6)
+            label = w.get("label", "220V")
+            c.drawString((x1+x2)/2, (y1+y2)/2 + 5, label if label in ["UP", "DOWN"] else "220V")
+    return bus_y - 35
+
+
 @app.route("/api/pdf", methods=["POST"])
 def pdf():
     data = request.get_json(force=True) or {}
@@ -138,10 +206,10 @@ def pdf():
     c.setFont(FONT_BOLD, 18)
     c.drawString(30, height-38, f"{project_name} - Elektrikçi Kablo ve KNX Topoloji Raporu")
     c.setFont(FONT_NAME, 9)
-    c.drawString(30, height-58, "Kahverengi: 220V enerji hattı | Yeşil: KNX Bus hattı | Perde/Panjur: UP ve DOWN iki ayrı röle kanalıdır.")
-    c.drawString(30, height-73, "Not: KNX Bus ana hat olarak düşünülür; cihazlar bu hatta T bağlantı ile bağlanır.")
+    c.drawString(30, height-58, "Kahverengi: 220V enerji hattı | Yeşil: KNX Bus hattı | Turuncu: kuru kontak / kontrol hattı")
+    c.drawString(30, height-73, "Not: KNX cihazlar enerji dağıtım noktası değildir. Enerji panodan gelir, kontrol KNX Bus üzerinden yapılır.")
 
-    next_y = draw_pdf_schematic(c, data, height-105)
+    next_y = draw_pdf_wiring(c, data, height-105)
 
     c.setFont(FONT_BOLD, 14)
     c.setFillColor(colors.black)

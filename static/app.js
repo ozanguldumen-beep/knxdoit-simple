@@ -11,7 +11,7 @@ const catalog = {
   knx_thermo_switch:{icon:"🌡️▣", name:"KNX Termostatlı Anahtar", kind:"knx", buttons:4},
   line_coupler:{icon:"🔗", name:"Line Coupler", kind:"knx"},
   binary_input:{icon:"🔘", name:"Universal Binary Input", kind:"knx"},
-  aircon_gateway:{icon:"❄️", name:"KNX Klima Gateway", kind:"knx"},
+  aircon_gateway:{icon:"❄️", name:"KNX Klima Gateway", kind:"knx", directPower:true},
   switch_actuator_8:{icon:"🔌", name:"Switch Actuator 8 Çıkış", kind:"actuator", channelType:"switch", outputs:8, amp:10},
   switch_actuator_12:{icon:"🔌", name:"Switch Actuator 12 Çıkış", kind:"actuator", channelType:"switch", outputs:12, amp:10},
   switch_actuator_16:{icon:"🔌", name:"Switch Actuator 16 Çıkış", kind:"actuator", channelType:"switch", outputs:16, amp:10},
@@ -23,19 +23,23 @@ const catalog = {
   lamp:{icon:"💡", name:"Lamba", kind:"energy", load:1},
   dim_lamp:{icon:"🔆", name:"Dim Lamba", kind:"energy", load:1},
   blind:{icon:"↕️", name:"Perde/Panjur", kind:"energy", load:2, needsTwoOutputs:true},
-  aircon_onoff:{icon:"❄️", name:"ON/OFF Klima", kind:"energy", load:3},
-  boiler:{icon:"🔥", name:"Kombi", kind:"energy", load:1},
+  aircon_direct:{icon:"❄️", name:"Klima Direkt Besleme", kind:"direct", directPower:true},
+  boiler:{icon:"🔥", name:"Kombi Kuru Kontak", kind:"dry", directPower:true},
   valve:{icon:"🚰", name:"Vana", kind:"energy", load:0.5},
   door:{icon:"🚪", name:"Kapı", kind:"energy", load:1},
   motor_valve:{icon:"⚙️", name:"Motorlu Vana", kind:"energy", load:1},
   onoff:{icon:"🔴", name:"ON/OFF Cihaz", kind:"energy", load:1},
+  fridge:{icon:"🧊", name:"Buzdolabı", kind:"direct", directPower:true},
+  washer:{icon:"🧺", name:"Çamaşır Makinesi", kind:"direct", directPower:true},
+  dishwasher:{icon:"🍽️", name:"Bulaşık Makinesi", kind:"direct", directPower:true},
+  modem:{icon:"🌐", name:"Modem", kind:"direct", directPower:true},
   collector:{icon:"🔥", name:"Yerden Isıtma Kollektörü", kind:"collector"}
 };
 
 const groups = {
   knxProducts:["knx_switch_1","knx_switch_2","knx_switch_4","knx_switch_6","knx_switch_8","knx_thermostat","knx_sensor","ip_router","power_supply","knx_thermo_switch","line_coupler","binary_input","aircon_gateway"],
   actuatorProducts:["switch_actuator_8","switch_actuator_12","switch_actuator_16","switch_actuator_24","dimmer_actuator_2","dimmer_actuator_4","dimmer_actuator_8","rgbw_actuator"],
-  energyProducts:["lamp","dim_lamp","blind","aircon_onoff","boiler","valve","collector","door","motor_valve","onoff"]
+  energyProducts:["lamp","dim_lamp","blind","valve","collector","motor_valve","onoff","boiler","aircon_direct","fridge","washer","dishwasher","modem"]
 };
 
 let state = {
@@ -405,7 +409,10 @@ function getRealDevice(id){
 }
 
 function isLoad(t){
-  return ["lamp","dim_lamp","blind","aircon_onoff","boiler","valve","door","motor_valve","onoff"].includes(t);
+  return ["lamp","dim_lamp","blind","valve","door","motor_valve","onoff"].includes(t);
+}
+function isDirectPowered(t){
+  return ["aircon_direct","boiler","fridge","washer","dishwasher","modem","aircon_gateway"].includes(t);
 }
 function isKnxOnly(t){
   const meta=catalog[t];
@@ -422,9 +429,14 @@ function hasKnxConnection(deviceId){
   return state.wires.some(w => w.type === "knx" && (w.from.id === deviceId || w.to.id === deviceId || w.from.deviceId === deviceId || w.to.deviceId === deviceId));
 }
 
-function allowed(a,b,t){
+
+function validateConnection(a,b,t){
   if(t==="knx"){
-    if(isLoad(a.type)||isLoad(b.type)){ alert("Enerji ürünü KNX hattına bağlanamaz."); return false; }
+    if(isLoad(a.type)||isLoad(b.type)) return "KNX Bus enerji/yük hattına bağlanamaz.";
+    if(isDirectPowered(a.type)||isDirectPowered(b.type)){
+      if(a.type==="aircon_gateway" || b.type==="aircon_gateway") return true;
+      return "Bu cihaz direkt panodan beslenir; KNX Bus ile kontrol edilmez.";
+    }
     return true;
   }
 
@@ -434,26 +446,39 @@ function allowed(a,b,t){
     const loadItem = aLoad ? a : (bLoad ? b : null);
     const chItem = aCh ? a : (bCh ? b : null);
 
-    if(aLoad && bLoad){ alert("Enerjili ürünler birbirine bağlanamaz. Lamba lambaya bağlanmaz."); return false; }
-    if(isKnxOnly(a.type) || isKnxOnly(b.type)){ alert("KNX ürünler enerji hattına bağlanamaz."); return false; }
-    if(!loadItem || !chItem){ alert("Enerji hattı aktüatör röle kanalı ile enerji ürünü arasında çizilir."); return false; }
+    if(isDirectPowered(a.type)||isDirectPowered(b.type)){
+      return "Klima, kombi, beyaz eşya ve modem gibi cihazların enerjisi direkt panodan gelir; KNX aktüatör üzerinden enerji bağlanmaz.";
+    }
+    if(aLoad && bLoad) return "Enerjili/yük cihazları birbirine bağlanamaz. Lamba lambaya bağlanmaz.";
+    if(isKnxOnly(a.type) || isKnxOnly(b.type)) return "KNX cihazlar enerji hattına bağlanamaz.";
+    if(!loadItem || !chItem) return "Enerji hattı yalnızca aktüatör röle kanalı ile küçük yük arasında çizilir.";
 
     const channelMeta=catalog[chItem.type];
-    if(!channelMeta || channelMeta.kind!=="actuator"){ alert("Enerji hattı için aktüatör kanalı seçmelisin."); return false; }
+    if(!channelMeta || channelMeta.kind!=="actuator") return "Enerji hattı için aktüatör kanalı seçmelisin.";
 
-    if(loadItem.type==="dim_lamp" && chItem.channelType!=="dimmer"){ alert("Dim lamba sadece Dimmer Actuator kanalına bağlanır."); return false; }
-    if(loadItem.type==="blind" && chItem.channelType!=="switch"){ alert("Perde/Panjur Switch Actuator kanalına bağlanır."); return false; }
-    if(loadItem.type!=="dim_lamp" && loadItem.type!=="blind" && chItem.channelType!=="switch"){ alert("Bu enerji ürünü Switch Actuator kanalına bağlanmalı."); return false; }
+    if(loadItem.type==="dim_lamp" && chItem.channelType!=="dimmer") return "Dim lamba sadece Dimmer Actuator kanalına bağlanır.";
+    if(loadItem.type==="blind" && chItem.channelType!=="switch") return "Perde/Panjur Switch Actuator kanalına bağlanır.";
+    if(loadItem.type!=="dim_lamp" && loadItem.type!=="blind" && chItem.channelType!=="switch") return "Bu yük Switch Actuator kanalına bağlanmalı.";
 
-    if(hasEnergyConnection(loadItem.id)){ alert("Bu enerji ürününe zaten bir röle/kablo bağlandı. İkinci enerji kablosu bağlanamaz."); return false; }
+    if(hasEnergyConnection(loadItem.id)) return "Bu yüke zaten bir röle/kablo bağlandı. İkinci enerji kablosu bağlanamaz.";
 
     if(loadItem.type==="blind"){
       const next=getNextChannelItem(chItem);
-      if(!next){ alert("Perde/Panjur için yanındaki DOWN kanalı boş olmalı."); return false; }
+      if(!next) return "Perde/Panjur için yanındaki DOWN kanalı boş olmalı.";
     }
   }
   return true;
 }
+
+function allowed(a,b,t){
+  const result = validateConnection(a,b,t);
+  if(result !== true){
+    alert(result);
+    return false;
+  }
+  return true;
+}
+
 
 function clearSel(){
   selected=null;
@@ -487,6 +512,7 @@ function drawWires(){
       el=document.createElementNS("http://www.w3.org/2000/svg","path");
       el.setAttribute("d",`M ${x1} ${y1} L ${x1} ${busY} L ${x2} ${busY} L ${x2} ${y2}`);
       el.setAttribute("class","knx-line");
+      el.setAttribute("fill","none");
     } else {
       el=document.createElementNS("http://www.w3.org/2000/svg","line");
       el.setAttribute("x1",x1); el.setAttribute("y1",y1); el.setAttribute("x2",x2); el.setAttribute("y2",y2);
@@ -509,21 +535,38 @@ function findElementForItem(item){
   return document.querySelector(`[data-id="${item.id}"]`);
 }
 
+
 function makeDraggable(el,obj){
-  let drag=false, ox=0, oy=0;
-  el.onmousedown=e=>{
+  let dragging=false, startX=0, startY=0, startLeft=0, startTop=0;
+
+  el.addEventListener("pointerdown", (e)=>{
     if(e.target.closest(".device") || e.target.closest(".channel") || e.target.closest(".knx-port") || e.target.closest(".button-cell")) return;
-    drag=true; ox=e.offsetX; oy=e.offsetY;
-  };
-  document.onmousemove=e=>{
-    if(!drag) return;
-    const r=document.getElementById("zoomLayer").getBoundingClientRect();
-    obj.x=(e.clientX-r.left)/zoom-ox; obj.y=(e.clientY-r.top)/zoom-oy;
-    el.style.left=obj.x+"px"; el.style.top=obj.y+"px";
+    dragging=true;
+    el.setPointerCapture(e.pointerId);
+    startX=e.clientX;
+    startY=e.clientY;
+    startLeft=obj.x;
+    startTop=obj.y;
+    e.preventDefault();
+  });
+
+  el.addEventListener("pointermove", (e)=>{
+    if(!dragging) return;
+    obj.x = startLeft + (e.clientX-startX)/zoom;
+    obj.y = startTop + (e.clientY-startY)/zoom;
+    el.style.left=obj.x+"px";
+    el.style.top=obj.y+"px";
     drawWires();
-  };
-  document.onmouseup=()=>{ if(drag){ drag=false; markDirty(); } };
+  });
+
+  el.addEventListener("pointerup", ()=>{
+    if(dragging){
+      dragging=false;
+      markDirty();
+    }
+  });
 }
+
 
 function deleteWire(id){
   if(!confirm("Bu kablo silinsin mi?")) return;

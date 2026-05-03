@@ -1,3 +1,3 @@
-# KNXdoit v10 Relay System
+# KNXdoit v10 Fixed Rules
 
-Relay/channel based actuator UI, right panel toggle, zoom, and stricter wiring rules.
+Oda/pano/kollektör sürükleme düzeltildi. KNX siyah dolgu hatası giderildi. PDF enerji + KNX çizimi eklendi. KNXdoit Kurallar v2 Revize sisteme işlendi.

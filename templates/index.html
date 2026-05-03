@@ -9,7 +9,7 @@
 <div class="app" id="appRoot">
   <aside class="sidebar">
     <h1>KNX<span>doit</span></h1>
-    <p>Röle bazlı KNX kablo şeması ve doğrulama aracı</p>
+    <p>KNXdoit v2 kurallı röle bazlı kablo şeması</p>
 
     <label class="label">Proje Adı</label>
     <input id="projectName" class="project-input" value="Villa Projesi" onchange="updateProjectName()">
@@ -32,13 +32,13 @@
     </details>
 
     <details>
-      <summary>▶ Enerji Ürünleri</summary>
+      <summary>▶ Yük / Cihazlar</summary>
       <div id="energyProducts"></div>
     </details>
 
     <details open>
       <summary>▼ Hatlar</summary>
-      <button id="btn-energy" onclick="setTool('energy')">Enerji Hattı 220V</button>
+      <button id="btn-energy" onclick="setTool('energy')">220V / Yük Hattı</button>
       <button id="btn-knx" onclick="setTool('knx')">KNX Bus T Bağlantı</button>
       <button id="btn-delete" onclick="setTool('delete')">Silme Modu</button>
     </details>
@@ -70,7 +70,7 @@
       <div class="legend">
         <span><b class="brown"></b> Enerji</span>
         <span><b class="green"></b> KNX</span>
-        <span><b class="down"></b> DOWN</span>
+        <span><b class="orange"></b> Kuru Kontak</span>
       </div>
     </header>
 
