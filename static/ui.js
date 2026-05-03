@@ -1,31 +1,42 @@
-// static/ui.js
-
 import { autoPlaceDevice, clearPanel } from "./panel.js";
 import { drawPanel } from "./canvas.js";
 import { DEVICES } from "./devices.js";
 import {
   isPanelDevice,
   isLoadDevice,
-  connectDevice,
-  getRuleSummary
+  connectDevice
 } from "./rules.js";
 
 export function initUI(panel, canvas) {
-  bindMenus(panel, canvas);
+  const systemDevices = DEVICES.system || DEVICES.knxProducts || [];
+  const actuators = DEVICES.actuators || [];
+  const loads = DEVICES.loads || DEVICES.loadDevices || [];
+
+  createMenu("knxProducts", systemDevices, panel, canvas);
+  createMenu("actuators", actuators, panel, canvas);
+  createMenu("loads", loads, panel, canvas);
   bindActions(panel, canvas);
+  setStatus("Sistem hazır.");
 }
 
-function bindMenus(panel, canvas) {
-  createMenu("knxProducts", DEVICES.system, panel, canvas);
-  createMenu("actuators", DEVICES.actuators, panel, canvas);
-  createMenu("loads", DEVICES.loads, panel, canvas);
-}
-
-function createMenu(menuId, items, panel, canvas) {
+function createMenu(menuId, items = [], panel, canvas) {
   const container = document.getElementById(menuId);
+  const toggle = document.querySelector(`[data-toggle="${menuId}"]`);
+
   if (!container) return;
 
   container.innerHTML = "";
+
+  if (toggle) {
+    toggle.onclick = () => {
+      container.classList.toggle("hidden");
+    };
+  }
+
+  if (!Array.isArray(items) || items.length === 0) {
+    container.innerHTML = `<div style="color:#9ca3af;font-size:13px;">Ürün yok</div>`;
+    return;
+  }
 
   items.forEach((device) => {
     const btn = document.createElement("button");
@@ -33,7 +44,7 @@ function createMenu(menuId, items, panel, canvas) {
 
     btn.innerHTML = `
       <span>${device.name}</span>
-      <small>${device.moduleWidth}M</small>
+      <small>${device.moduleWidth || 1}M</small>
     `;
 
     btn.onclick = () => {
@@ -41,78 +52,76 @@ function createMenu(menuId, items, panel, canvas) {
         addPanelDevice(device, panel, canvas);
       } else if (isLoadDevice(device)) {
         addLoadDevice(device, panel, canvas);
+      } else {
+        setStatus(`${device.name} cihaz tipi tanınmadı.`, true);
       }
     };
 
     container.appendChild(btn);
   });
-
-  // Aç/Kapa
-  const toggle = document.querySelector(`[data-toggle="${menuId}"]`);
-  if (toggle) {
-    toggle.onclick = () => {
-      container.classList.toggle("hidden");
-    };
-  }
 }
 
 function addPanelDevice(device, panel, canvas) {
   try {
-    autoPlaceDevice(panel, device);
+    autoPlaceDevice(panel, { ...device });
     drawPanel(canvas, panel);
-
     setStatus(`${device.name} panoya eklendi.`);
-  } catch (e) {
-    setStatus(e.message, true);
+  } catch (error) {
+    setStatus(error.message, true);
   }
 }
 
-// 🔥 BURASI KRİTİK
 function addLoadDevice(load, panel, canvas) {
-  // uygun aktüatör bul
-  const actuators = panel.rails.flatMap((r) =>
-    r.modules.filter((d) =>
-      ["actuator", "dimmer", "curtain_actuator"].includes(d.type)
+  const actuators = panel.rails.flatMap((rail) =>
+    rail.modules.filter((device) =>
+      ["actuator", "dimmer", "curtain_actuator"].includes(device.type)
     )
   );
 
   if (actuators.length === 0) {
-    setStatus("Önce aktüatör eklemelisin.", true);
+    setStatus("Önce uygun aktüatör eklemelisin.", true);
     return;
   }
 
-  // ilk uygun aktüatöre bağla
-  for (let actuator of actuators) {
-    const result = connectDevice(actuator, load);
+  for (const actuator of actuators) {
+    const result = connectDevice(actuator, {
+      ...load,
+      id: `${load.type}-${Date.now()}`
+    });
 
     if (result.ok) {
       drawPanel(canvas, panel);
-
       setStatus(result.message);
       return;
     }
   }
 
-  setStatus("Bu yük için uygun aktüatör bulunamadı.", true);
+  setStatus("Bu yük için uygun veya boş kanallı aktüatör bulunamadı.", true);
 }
 
 function bindActions(panel, canvas) {
-  document.getElementById("clearPanel").onclick = () => {
-    clearPanel(panel);
-    drawPanel(canvas, panel);
-    setStatus("Pano temizlendi.");
-  };
+  const clearBtn = document.getElementById("clearPanel");
+  const pdfBtn = document.getElementById("downloadPdf");
 
-  document.getElementById("downloadPdf").onclick = () => {
-    setStatus("PDF özelliği yakında.");
-  };
+  if (clearBtn) {
+    clearBtn.onclick = () => {
+      clearPanel(panel);
+      drawPanel(canvas, panel);
+      setStatus("Pano temizlendi.");
+    };
+  }
+
+  if (pdfBtn) {
+    pdfBtn.onclick = () => {
+      setStatus("PDF adımına sonra geçeceğiz.");
+    };
+  }
 }
 
 function setStatus(text, isError = false) {
   const el = document.getElementById("statusText");
-
   if (!el) return;
 
   el.textContent = text;
-  el.style.color = isError ? "#ef4444" : "#22c55e";
+  el.classList.toggle("error", isError);
 }
