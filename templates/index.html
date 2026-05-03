@@ -1,40 +1,38 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <title>KNXdoit v10 Röleli Sistem</title>
-  <link rel="stylesheet" href="/static/style.css">
-</head>
 <body>
-<div class="app" id="appRoot">
-  <aside class="sidebar">
-    <h1>KNX<span>doit</span></h1>
-    <p>KNXdoit v11 - kurallı röle bazlı KNX çizim ve PDF şema</p>
 
-    <label class="label">Proje Adı</label>
-    <input id="projectName" class="project-input" value="Villa Projesi" onchange="updateProjectName()">
+<h1>KNX Panel</h1>
 
-    <details open>
-      <summary>▼ Kat / Oda</summary>
-      <button onclick="addFloor()">+ Kat Ekle</button>
-      <button onclick="addRoom()">+ Oda Ekle</button>
-      <div id="floorTabs" class="floor-tabs"></div>
-    </details>
+<div style="display:flex">
 
-    <details>
-      <summary>▶ KNX Ürünler</summary>
-      <div id="knxProducts"></div>
-    </details>
+  <!-- SOL MENÜ -->
+  <div style="width:250px; padding:10px; background:#111; color:white">
 
-    <details>
-      <summary>▶ Aktüatörler</summary>
-      <div id="actuatorProducts"></div>
-    </details>
+    <h3 id="toggleActuator" style="cursor:pointer">
+      ▶ Aktüatörler
+    </h3>
 
-    <details>
-      <summary>▶ Yük / Cihazlar</summary>
-      <div id="energyProducts"></div>
-    </details>
+    <div id="actuatorList" style="display:none"></div>
+
+  </div>
+
+  <!-- SAHNE -->
+  <canvas id="panelCanvas"></canvas>
+
+</div>
+
+<script type="module">
+  import { createPanel } from "./panel.js";
+  import { drawPanel } from "./canvas.js";
+  import { initUI } from "./ui.js";
+
+  const panel = createPanel(3);
+  const canvas = document.getElementById("panelCanvas");
+
+  drawPanel(canvas, panel);
+  initUI(panel, canvas);
+</script>
+
+</body>    </details>
 
     <details open>
       <summary>▼ Hatlar</summary>
