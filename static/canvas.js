@@ -1,3 +1,5 @@
+// static/canvas.js
+
 import { PANEL_CONFIG } from "./panel.js";
 
 const DPR = window.devicePixelRatio || 1;
@@ -12,8 +14,9 @@ export function drawPanel(canvas, panel) {
   drawRails(ctx, panel);
   drawDevices(ctx, panel);
   drawBusCable(ctx, panel);
-  drawFieldLoads(ctx, panel);
+  drawFieldArea(ctx, panel);
   drawLoadCables(ctx, panel);
+  drawFieldLoads(ctx, panel);
 }
 
 function setupCanvas(canvas, width, height) {
@@ -25,7 +28,6 @@ function setupCanvas(canvas, width, height) {
   const ctx = canvas.getContext("2d");
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   ctx.clearRect(0, 0, width, height);
-
   return ctx;
 }
 
@@ -35,17 +37,7 @@ function drawWorkspace(ctx, panel) {
 }
 
 function drawPanelBox(ctx, panel) {
-  roundRect(
-    ctx,
-    25,
-    25,
-    panel.width - 50,
-    panel.height - 50,
-    22,
-    "#ffffff",
-    "#94a3b8",
-    2
-  );
+  roundRect(ctx, 25, 25, panel.width - 50, panel.height - 50, 22, "#ffffff", "#94a3b8", 2);
 
   ctx.fillStyle = "#0f172a";
   ctx.font = "700 30px Arial";
@@ -64,36 +56,14 @@ function drawRails(ctx, panel) {
 }
 
 function drawDinRail(ctx, rail) {
-  roundRect(
-    ctx,
-    rail.x - 10,
-    rail.y - 8,
-    rail.width + 20,
-    rail.height + 16,
-    7,
-    "#dbeafe",
-    "#dbeafe",
-    1
-  );
-
-  roundRect(
-    ctx,
-    rail.x,
-    rail.y,
-    rail.width,
-    rail.height,
-    4,
-    "#94a3b8",
-    "#64748b",
-    1
-  );
+  roundRect(ctx, rail.x - 10, rail.y - 8, rail.width + 20, rail.height + 16, 7, "#dbeafe", "#dbeafe", 1);
+  roundRect(ctx, rail.x, rail.y, rail.width, rail.height, 4, "#94a3b8", "#64748b", 1);
 
   ctx.strokeStyle = "#64748b";
   ctx.lineWidth = 1;
 
   for (let i = 0; i <= rail.slots; i++) {
     const x = rail.x + i * PANEL_CONFIG.moduleUnit;
-
     ctx.beginPath();
     ctx.moveTo(x, rail.y + 3);
     ctx.lineTo(x, rail.y + rail.height - 3);
@@ -103,15 +73,13 @@ function drawDinRail(ctx, rail) {
 
 function drawRailLabel(ctx, rail) {
   ctx.fillStyle = "#334155";
-  ctx.font = "700 16px Arial";
-  ctx.fillText(rail.name, rail.x, rail.y + rail.height + 34);
+  ctx.font = "700 15px Arial";
+  ctx.fillText(rail.name, rail.x, rail.y + rail.height + 32);
 }
 
 function drawDevices(ctx, panel) {
   panel.rails.forEach((rail) => {
-    rail.modules.forEach((device) => {
-      drawDevice(ctx, device, rail);
-    });
+    rail.modules.forEach((device) => drawDevice(ctx, device, rail));
   });
 }
 
@@ -119,30 +87,18 @@ function getDeviceDrawBox(device, rail) {
   const moduleWidth = device.moduleWidth || 2;
   const w = moduleWidth * PANEL_CONFIG.moduleUnit - 4;
   const h = PANEL_CONFIG.deviceHeight || 86;
-
   const slot = device.startSlot ?? device.slot ?? 0;
   const x = rail.x + slot * PANEL_CONFIG.moduleUnit + 2;
   const y = rail.y - Math.round((h - rail.height) / 2);
-
   return { x, y, w, h };
 }
 
 function drawDevice(ctx, device, rail) {
   const { x, y, w, h } = getDeviceDrawBox(device, rail);
 
-  roundRect(
-    ctx,
-    x,
-    y,
-    w,
-    h,
-    7,
-    device.color || "#2563eb",
-    "#1e293b",
-    2
-  );
+  roundRect(ctx, x, y, w, h, 7, device.color || "#2563eb", "#1e293b", 2);
 
-  ctx.fillStyle = "rgba(255,255,255,0.14)";
+  ctx.fillStyle = "rgba(255,255,255,0.15)";
   ctx.fillRect(x + 4, y + 5, Math.max(0, w - 8), 22);
 
   ctx.fillStyle = "#ffffff";
@@ -152,23 +108,20 @@ function drawDevice(ctx, device, rail) {
   ctx.font = "700 11px Arial";
   ctx.fillText(`${device.moduleWidth || 2}M`, x + 8, y + h - 9);
 
+  if (["actuator", "dimmer", "curtain_actuator"].includes(device.type)) {
+    const used = (device.connections || []).length;
+    const max = device.channels || 0;
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "700 10px Arial";
+    ctx.fillText(`${used}/${max} CH`, x + Math.max(8, w - 44), y + h - 9);
+  }
+
   drawTerminals(ctx, x, y, w, h, device);
 }
 
 function drawTerminals(ctx, x, y, w, h, device) {
-  const count = Math.min(
-    10,
-    Math.max(
-      2,
-      device.terminals?.outputs?.length ||
-        device.channels ||
-        device.moduleWidth ||
-        2
-    )
-  );
-
+  const count = Math.min(10, Math.max(2, device.channels || device.moduleWidth || 2));
   const gap = w / (count + 1);
-
   ctx.fillStyle = "#ffffff";
 
   for (let i = 1; i <= count; i++) {
@@ -183,15 +136,7 @@ function drawBusCable(ctx, panel) {
 
   panel.rails.forEach((rail) => {
     rail.modules.forEach((device) => {
-      if (
-        [
-          "power_supply",
-          "interface",
-          "actuator",
-          "dimmer",
-          "curtain_actuator"
-        ].includes(device.type)
-      ) {
+      if (["power_supply", "interface", "actuator", "dimmer", "curtain_actuator"].includes(device.type)) {
         busDevices.push({ device, rail });
       }
     });
@@ -201,68 +146,84 @@ function drawBusCable(ctx, panel) {
 
   ctx.strokeStyle = "#dc2626";
   ctx.lineWidth = 2;
-  ctx.setLineDash([6, 5]);
+  ctx.setLineDash([7, 6]);
   ctx.beginPath();
 
   busDevices.forEach((item, index) => {
     const box = getDeviceDrawBox(item.device, item.rail);
     const cx = box.x + box.w / 2;
     const cy = box.y + box.h + 12;
-
     if (index === 0) ctx.moveTo(cx, cy);
     else ctx.lineTo(cx, cy);
   });
 
   ctx.stroke();
   ctx.setLineDash([]);
+
+  const first = busDevices[0];
+  const firstBox = getDeviceDrawBox(first.device, first.rail);
+  ctx.fillStyle = "#dc2626";
+  ctx.font = "700 11px Arial";
+  ctx.fillText("KNX BUS", firstBox.x, firstBox.y + firstBox.h + 30);
 }
 
 function getAllConnectedDevices(panel) {
   const list = [];
-
   panel.rails.forEach((rail) => {
     rail.modules.forEach((device) => {
       if (device.connections && device.connections.length > 0) {
         device.connections.forEach((connection, index) => {
-          list.push({
-            actuator: device,
-            rail,
-            connection,
-            index
-          });
+          list.push({ actuator: device, rail, connection, index });
         });
       }
     });
   });
-
   return list;
 }
 
 function getFieldBaseY(panel) {
   const lastRail = panel.rails[panel.rails.length - 1];
-  return lastRail.y + 95;
+  return Math.min(panel.height - 240, lastRail.y + 105);
 }
 
 function getLoadPosition(panel, itemIndex) {
   const startX = 90;
   const startY = getFieldBaseY(panel) + 45;
-  const gapX = 130;
+  const gapX = 135;
   const gapY = 82;
   const perRow = 6;
-
   const col = itemIndex % perRow;
   const row = Math.floor(itemIndex / perRow);
+  return { x: startX + col * gapX, y: startY + row * gapY };
+}
 
-  return {
-    x: startX + col * gapX,
-    y: startY + row * gapY
-  };
+function drawFieldArea(ctx, panel) {
+  const y = getFieldBaseY(panel);
+  const h = panel.height - y - 55;
+
+  roundRect(ctx, 55, y, panel.width - 110, h, 16, "#f8fafc", "#cbd5e1", 1.5);
+  ctx.setLineDash([8, 6]);
+  ctx.strokeStyle = "#cbd5e1";
+  ctx.beginPath();
+  ctx.moveTo(72, y + 34);
+  ctx.lineTo(panel.width - 72, y + 34);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = "#475569";
+  ctx.font = "700 15px Arial";
+  ctx.fillText("Saha Yükleri / Bağlanan Cihazlar", 75, y + 23);
 }
 
 function drawFieldLoads(ctx, panel) {
-  drawFieldAreaTitle(ctx, panel);
-
   const loads = getAllConnectedDevices(panel);
+
+  if (loads.length === 0) {
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "14px Arial";
+    ctx.fillText("Henüz saha yükü bağlanmadı.", 80, getFieldBaseY(panel) + 70);
+    return;
+  }
 
   loads.forEach((item, index) => {
     const pos = getLoadPosition(panel, index);
@@ -270,48 +231,31 @@ function drawFieldLoads(ctx, panel) {
   });
 }
 
-function drawFieldAreaTitle(ctx, panel) {
-  const y = getFieldBaseY(panel);
-
-  ctx.strokeStyle = "#cbd5e1";
-  ctx.lineWidth = 1;
-  ctx.setLineDash([8, 6]);
-  ctx.beginPath();
-  ctx.moveTo(55, y);
-  ctx.lineTo(panel.width - 55, y);
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  ctx.fillStyle = "#475569";
-  ctx.font = "700 15px Arial";
-  ctx.fillText("Saha Yükleri / Bağlanan Cihazlar", 70, y - 15);
-}
-
 function drawLoadIcon(ctx, x, y, connection, index) {
   const type = connection.targetType;
   const label = connection.targetName || "Yük";
   const channel = connection.channel || index + 1;
 
-  roundRect(ctx, x, y, 92, 56, 12, "#ffffff", "#94a3b8", 1.5);
+  roundRect(ctx, x, y, 96, 58, 12, "#ffffff", "#94a3b8", 1.5);
 
-  ctx.fillStyle = getLoadColor(type);
+  ctx.fillStyle = connection.targetColor || getLoadColor(type);
   ctx.beginPath();
-  ctx.arc(x + 24, y + 26, 14, 0, Math.PI * 2);
+  ctx.arc(x + 25, y + 27, 14, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.fillStyle = "#ffffff";
   ctx.font = "700 16px Arial";
   ctx.textAlign = "center";
-  ctx.fillText(getLoadSymbol(type), x + 24, y + 31);
+  ctx.fillText(getLoadSymbol(type), x + 25, y + 32);
   ctx.textAlign = "left";
 
   ctx.fillStyle = "#0f172a";
   ctx.font = "700 10px Arial";
-  wrapText(ctx, label, x + 44, y + 20, 42, 11, 2);
+  wrapText(ctx, label, x + 46, y + 21, 43, 11, 2);
 
   ctx.fillStyle = "#64748b";
   ctx.font = "10px Arial";
-  ctx.fillText(`K${channel}`, x + 44, y + 48);
+  ctx.fillText(`K${channel}`, x + 46, y + 49);
 }
 
 function getLoadColor(type) {
@@ -332,19 +276,15 @@ function drawLoadCables(ctx, panel) {
   loads.forEach((item, index) => {
     const deviceBox = getDeviceDrawBox(item.actuator, item.rail);
     const loadPos = getLoadPosition(panel, index);
-
     const fromX = deviceBox.x + deviceBox.w / 2;
-    const fromY = deviceBox.y + deviceBox.h + 5;
-
-    const toX = loadPos.x + 46;
+    const fromY = deviceBox.y + deviceBox.h + 6;
+    const toX = loadPos.x + 48;
     const toY = loadPos.y;
-
-    const midY = Math.max(fromY + 35, toY - 35);
+    const midY = Math.max(fromY + 30, Math.min(toY - 28, getFieldBaseY(panel) + 20));
 
     ctx.strokeStyle = "#111827";
     ctx.lineWidth = 2;
     ctx.setLineDash([]);
-
     ctx.beginPath();
     ctx.moveTo(fromX, fromY);
     ctx.lineTo(fromX, midY);
@@ -354,13 +294,12 @@ function drawLoadCables(ctx, panel) {
 
     ctx.fillStyle = "#111827";
     ctx.font = "10px Arial";
-    ctx.fillText(`CH${item.connection.channel}`, toX + 6, toY - 6);
+    ctx.fillText(`CH${item.connection.channel}`, toX + 7, toY - 6);
   });
 }
 
 function roundRect(ctx, x, y, w, h, r, fill, stroke, lineWidth = 1) {
   const radius = Math.min(r, w / 2, h / 2);
-
   ctx.beginPath();
   ctx.moveTo(x + radius, y);
   ctx.lineTo(x + w - radius, y);
@@ -372,12 +311,10 @@ function roundRect(ctx, x, y, w, h, r, fill, stroke, lineWidth = 1) {
   ctx.lineTo(x, y + radius);
   ctx.quadraticCurveTo(x, y, x + radius, y);
   ctx.closePath();
-
   if (fill) {
     ctx.fillStyle = fill;
     ctx.fill();
   }
-
   if (stroke) {
     ctx.strokeStyle = stroke;
     ctx.lineWidth = lineWidth;
@@ -392,18 +329,15 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight, maxLines = 2) {
 
   for (let n = 0; n < words.length; n++) {
     const testLine = line + words[n] + " ";
-
     if (ctx.measureText(testLine).width > maxWidth && n > 0) {
       ctx.fillText(line.trim(), x, y);
       line = words[n] + " ";
       y += lineHeight;
       lines++;
-
       if (lines >= maxLines - 1) break;
     } else {
       line = testLine;
     }
   }
-
   ctx.fillText(line.trim(), x, y);
 }

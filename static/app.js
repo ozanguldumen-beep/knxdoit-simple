@@ -1,3 +1,5 @@
+// static/app.js
+
 import { createPanel } from "./panel.js";
 import { drawPanel } from "./canvas.js";
 import { initUI } from "./ui.js";

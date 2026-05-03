@@ -7,6 +7,7 @@ export const DEVICES = {
       name: "KNX Power Supply",
       type: "power_supply",
       moduleWidth: 4,
+      channels: 1,
       color: "#2563eb"
     },
     {
@@ -14,6 +15,7 @@ export const DEVICES = {
       name: "KNX IP Interface",
       type: "interface",
       moduleWidth: 2,
+      channels: 1,
       color: "#7c3aed"
     }
   ],
@@ -50,21 +52,18 @@ export const DEVICES = {
       id: "light-load",
       name: "Lamba Yükü",
       type: "light_load",
-      moduleWidth: 2,
-      color: "#64748b"
+      color: "#f59e0b"
     },
     {
       id: "dim-light",
       name: "Dim Lamba",
       type: "dim_light",
-      moduleWidth: 2,
       color: "#9333ea"
     },
     {
       id: "curtain-motor",
       name: "Perde Motoru",
       type: "curtain_motor",
-      moduleWidth: 2,
       color: "#0ea5e9"
     }
   ]
