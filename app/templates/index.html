@@ -1,15 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Bayiler İçin KNX Proje Sihirbazı{% endblock %}
+{% block title %}Bayiler için KNX Proje Sihirbazı{% endblock %}
 {% block content %}
 <main class="landing">
-  <div class="badge">ETS bilgisine gerek yok</div>
-  <h1>KNX Projesini<br>Dakikalar İçinde Hazırla</h1>
-  <p>Oda, pano, cihaz ve kabloyu canvas üzerinde çiz. Elektrikçi PDF’i ve bayi için .knxproj dosyasını otomatik oluştur.</p>
+  <div class="pill">Canvas + Pano + PDF + .knxproj</div>
+  <h1>KNX Projesini Bayiler İçin Kolaylaştır</h1>
+  <p>Katları ve odaları oluştur, cihazları yerleştir, kollektörleri tanımla, panoyu kurgula. Elektrikçi PDF’i ve ETS için .knxproj otomatik oluşsun.</p>
   <a href="/register" class="btn big">7 Gün Ücretsiz Dene</a>
-  <section class="cards">
-    <article><b>Canvas ile Çiz</b><span>Oda, pano, saha yükü ve KNX cihazlarını görsel ekle.</span></article>
-    <article><b>Pano Otomatik</b><span>DIN ray, kanal ve aktüatör doluluklarını net göster.</span></article>
-    <article><b>PDF + .knxproj</b><span>Elektrikçiye çıktı, bayiye ETS başlangıç dosyası ver.</span></article>
-  </section>
+  <div class="cards">
+    <div><b>Kat / Oda</b><span>Projeyi gerçek yapı üzerinden kur.</span></div>
+    <div><b>Pano</b><span>DIN ray, aktüatör ve kanal yerleşimi.</span></div>
+    <div><b>Rules Engine</b><span>KNX kurallarına göre uyarılar.</span></div>
+  </div>
 </main>
 {% endblock %}

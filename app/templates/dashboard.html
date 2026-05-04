@@ -2,13 +2,13 @@
 {% block title %}Dashboard{% endblock %}
 {% block content %}
 <div class="dashboard">
-  <div class="dash-head"><h1>Projelerim</h1><a href="/project/new" class="btn">+ Yeni Proje</a></div>
+  <div class="dash-head"><h1>Projelerim</h1><a class="btn" href="/project/new">+ Yeni Proje</a></div>
   {% if projects %}
     {% for p in projects %}
-      <div class="project-row"><div><b>{{ p.name }}</b><span>{{ p.ets_version }} · {{ p.created_at.strftime('%d.%m.%Y') }}</span></div><span class="pill">{{ p.ets_version }}</span></div>
+      <div class="project-row"><b>{{ p.name }}</b><span>{{ p.ets_version }} · {{ p.created_at.strftime('%d.%m.%Y') }}</span></div>
     {% endfor %}
   {% else %}
-    <div class="empty"><h3>Henüz proje yok</h3><p>İlk KNX projenizi oluşturun.</p><a href="/project/new" class="btn">+ Yeni Proje</a></div>
+    <div class="empty">Henüz proje yok. İlk KNX projenizi oluşturun.</div>
   {% endif %}
 </div>
 {% endblock %}

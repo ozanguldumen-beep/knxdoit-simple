@@ -1,7 +1,7 @@
-import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
+import os
 
 
 db = SQLAlchemy()
@@ -10,7 +10,7 @@ login_manager = LoginManager()
 
 def create_app():
     app = Flask(__name__)
-    app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "knxdoit-v14-secret")
+    app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "knxdoit-v16-secret")
     app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///knxdoit.db")
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 

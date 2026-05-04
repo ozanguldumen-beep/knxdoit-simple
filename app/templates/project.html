@@ -1,46 +1,49 @@
 {% extends "base.html" %}
 {% block title %}Yeni Proje{% endblock %}
 {% block content %}
-<div class="designer-shell">
+<div id="app" data-project-name="{{ project_name }}">
   <aside class="sidebar">
-    <div class="side-title">Ürün Kütüphanesi</div>
-    <button class="menu-title" data-toggle="knxProducts">▸ Pano KNX Ürünleri</button>
-    <div id="knxProducts" class="menu-list"></div>
-    <button class="menu-title" data-toggle="actuators">▸ Aktüatörler</button>
-    <div id="actuators" class="menu-list"></div>
-    <button class="menu-title" data-toggle="loads">▸ Saha Yükleri</button>
-    <div id="loads" class="menu-list"></div>
-    <button class="menu-title" data-toggle="fieldKnx">▸ KNX Saha Cihazları</button>
-    <div id="fieldKnx" class="menu-list"></div>
+    <div class="section-title">Kat / Oda</div>
+    <button id="addFloorBtn" class="soft-btn">+ Kat Ekle</button>
+    <div id="floorTabs" class="floor-tabs"></div>
+    <button id="addRoomBtn" class="soft-btn">+ Oda Ekle</button>
+    <button id="addCollectorBtn" class="soft-btn">+ Kollektör Ekle</button>
+
+    <div class="section-title">Odaya Cihaz Ekle</div>
+    <select id="roomSelect"></select>
+    <div id="fieldDevices"></div>
+
+    <div class="section-title">Pano Ürünleri</div>
+    <div id="panelProducts"></div>
+
     <div class="actions-grid">
-      <button id="clearPanel" class="soft-btn">Pano Temizle</button>
-      <button id="saveProject" class="soft-btn">Projeyi Kaydet</button>
-      <button id="downloadPdf" class="blue-btn">PDF Çıktı</button>
-      <button id="downloadKnx" class="green-btn">.knxproj</button>
+      <button id="clearBtn" class="soft-btn">Pano Temizle</button>
+      <button id="saveBtn" class="soft-btn">Projeyi Kaydet</button>
+      <button id="pdfBtn" class="btn">PDF Çıktı</button>
+      <button id="knxBtn" class="btn green">.knxproj</button>
     </div>
-    <div class="status-box"><h3>Durum</h3><div id="statusText">Sistem hazır.</div><div id="rulesStatus" class="rules-status"><b>Kurallar:</b> Uygun</div></div>
+
+    <div class="status-box">
+      <h3>Durum</h3>
+      <div id="statusText">Sistem hazır.</div>
+      <div id="rulesText" class="rules-text"></div>
+    </div>
   </aside>
 
   <main class="workspace">
-    <header class="project-topbar">
-      <div><h1>Gerçek Pano Görünümü</h1><p>Ürün ekle, yük bağla, grup adreslerini otomatik üret.</p></div>
-      <div class="metrics"><span>Ürün: <b id="deviceCount">0</b></span><span>GA: <b id="gaCount">0</b></span></div>
-      <div class="zoom-toolbar" aria-label="Canvas boyut ayarı">
-        <button id="zoomOut" type="button">−</button>
-        <input id="zoomRange" type="range" min="50" max="150" step="10" value="100" />
-        <button id="zoomIn" type="button">+</button>
-        <button id="zoomReset" type="button" class="zoom-reset"><span id="zoomLabel">100%</span></button>
-      </div>
-      <select id="etsVersion"><option>ETS6</option><option>ETS5</option></select>
+    <header class="work-head">
+      <div><h1>KNXdoit v16</h1><p>Kat, oda, kollektör, pano ve KNX çıktı motoru.</p></div>
+      <div class="summary"><span>Oda: <b id="roomCount">0</b></span><span>Ürün: <b id="productCount">0</b></span><span>GA: <b id="gaCount">0</b></span></div>
+      <div class="zoom-box"><button id="zoomOut">-</button><input id="zoomRange" type="range" min="50" max="150" value="100"><button id="zoomIn">+</button><button id="zoomReset">100%</button></div>
+      <select id="etsSelect"><option>ETS6</option><option>ETS5</option></select>
     </header>
-    <div class="canvas-wrap"><canvas id="panelCanvas"></canvas></div>
+    <div class="canvas-scroll"><div id="canvasStage"><canvas id="mainCanvas"></canvas></div></div>
   </main>
 
-  <aside class="ga-panel">
+  <aside class="rightbar">
     <h2>Grup Adresleri</h2>
-    <div id="gaList" class="ga-list">Cihaz ve bağlantı ekleyince oluşacak.</div>
+    <div id="gaList"></div>
   </aside>
 </div>
-<script>window.KNXDOIT_PROJECT_NAME = {{ project_name|tojson }};</script>
 <script type="module" src="/static/app.js"></script>
 {% endblock %}

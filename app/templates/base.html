@@ -1,33 +1,33 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>KNXdoit — {% block title %}{% endblock %}</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
-<nav class="nav">
-  <a href="/" class="logo">KNXdoit</a>
-  <div class="nav-links">
-    {% if current_user.is_authenticated %}
-      {% if current_user.plan == 'trial' %}
-        <span class="pill warn">Trial · {{ current_user.days_left() }} gün · {{ current_user.project_count() }}/3 proje</span>
+  <nav class="nav">
+    <a href="/" class="logo">KNXdoit</a>
+    <div class="nav-links">
+      {% if current_user.is_authenticated %}
+        {% if current_user.plan == 'trial' %}
+          <span class="badge warn">Trial · {{ current_user.days_left() }} gün · {{ current_user.project_count() }}/3 proje</span>
+        {% else %}
+          <span class="badge ok">Pro</span>
+        {% endif %}
+        <a href="/project/new">Proje</a>
+        <a href="/dashboard">Dashboard</a>
+        <a href="/logout">Çıkış</a>
       {% else %}
-        <span class="pill pro">Pro</span>
+        <a href="/login">Giriş</a>
+        <a href="/register" class="btn small">Ücretsiz Dene</a>
       {% endif %}
-      <a href="/project/new">Proje</a>
-      <a href="/dashboard">Dashboard</a>
-      <a href="/logout">Çıkış</a>
-    {% else %}
-      <a href="/login">Giriş</a>
-      <a href="/register" class="btn small">Ücretsiz Dene</a>
-    {% endif %}
-  </div>
-</nav>
-{% with messages = get_flashed_messages() %}
-  {% if messages %}<div class="flash">{% for m in messages %}<div>{{ m }}</div>{% endfor %}</div>{% endif %}
-{% endwith %}
-{% block content %}{% endblock %}
+    </div>
+  </nav>
+  {% with messages = get_flashed_messages() %}{% if messages %}
+    <div class="flash">{% for m in messages %}<div>{{ m }}</div>{% endfor %}</div>
+  {% endif %}{% endwith %}
+  {% block content %}{% endblock %}
 </body>
 </html>

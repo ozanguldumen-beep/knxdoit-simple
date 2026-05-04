@@ -1,53 +1,25 @@
-export const LOAD_LIBRARY = [
-  { id: "light-load", name: "Lamba Yükü", type: "light_load", moduleWidth: 0, channels: 1, color: "#f59e0b" },
-  { id: "dim-light", name: "Dim Lamba", type: "dim_light", moduleWidth: 0, channels: 1, color: "#9333ea" },
-  { id: "curtain-motor", name: "Perde Motoru", type: "curtain_motor", moduleWidth: 0, channels: 1, color: "#0ea5e9" }
+export const FIELD_DEVICES = [
+  { id: "light", name: "Lamba Yükü", type: "light_load", icon: "L", color: "#f59e0b", energy: true },
+  { id: "dim-light", name: "Dim Lamba", type: "dim_light", icon: "D", color: "#9333ea", energy: true },
+  { id: "curtain", name: "Perde Motoru", type: "curtain_motor", icon: "M", color: "#0ea5e9", energy: true },
+  { id: "valve", name: "Vana", type: "valve", icon: "V", color: "#14b8a6", energy: true },
+  { id: "thermostat", name: "Termostat", type: "thermostat", icon: "T", color: "#ef4444", energy: false },
+  { id: "knx-switch-1", name: "1 Gang KNX Anahtar", type: "knx_switch", icon: "K", color: "#475569", energy: false },
+  { id: "knx-switch-2", name: "2 Gang KNX Anahtar", type: "knx_switch", icon: "K", color: "#475569", energy: false },
+  { id: "sensor", name: "Sensör", type: "sensor", icon: "S", color: "#64748b", energy: false }
 ];
 
-export function normalizeProduct(product) {
-  const channelType = product.channel_type || product.channelType || "switch";
-  let type = product.type;
-  if (!type) {
-    if (["power_supply", "interface", "router"].includes(product.category)) type = product.category;
-    else if (product.category === "input") type = "input";
-    else if (product.category === "field_knx") type = channelType;
-    else if (channelType === "dimmer") type = "dimmer";
-    else if (channelType === "blind") type = "curtain_actuator";
-    else type = "actuator";
-  }
-
-  return {
-    id: String(product.id || product.name || Date.now()),
-    name: product.name,
-    category: product.category || "actuator",
-    type,
-    channelType,
-    channels: product.channels || 1,
-    moduleWidth: product.din_width ?? product.moduleWidth ?? 4,
-    color: pickColor(type, channelType)
-  };
-}
-
-function pickColor(type, channelType) {
-  if (type === "power_supply") return "#2563eb";
-  if (type === "interface" || type === "router") return "#7c3aed";
-  if (type === "dimmer") return "#f97316";
-  if (type === "curtain_actuator") return "#0f766e";
-  if (type === "input") return "#64748b";
-  if (type === "push" || channelType === "push") return "#60a5fa";
-  if (type === "thermostat") return "#ef4444";
-  return "#16a34a";
-}
-
-export async function fetchDevices() {
-  const res = await fetch("/api/products");
-  if (!res.ok) throw new Error("Ürün kütüphanesi alınamadı.");
-  const products = await res.json();
-  const normalized = products.map(normalizeProduct);
-  return {
-    system: normalized.filter((d) => ["power_supply", "interface", "router", "input"].includes(d.type)),
-    actuators: normalized.filter((d) => ["actuator", "dimmer", "curtain_actuator"].includes(d.type)),
-    fieldKnx: normalized.filter((d) => ["push", "thermostat", "thermostat_push"].includes(d.type) || d.category === "field_knx"),
-    loads: LOAD_LIBRARY
-  };
-}
+export const DEFAULT_PANEL_PRODUCTS = [
+  { id: "psu", name: "KNX Power Supply 640mA", category: "power_supply", channel_type: "power", channels: 1, din_width: 4, color: "#2563eb" },
+  { id: "ip-interface", name: "KNX IP Interface", category: "interface", channel_type: "interface", channels: 1, din_width: 2, color: "#7c3aed" },
+  { id: "ip-router", name: "KNX IP Router", category: "router", channel_type: "router", channels: 1, din_width: 2, color: "#334155" },
+  { id: "relay-8", name: "Switch Aktüatör 8 Kanal", category: "actuator", channel_type: "switch", channels: 8, din_width: 8, color: "#16a34a" },
+  { id: "relay-12", name: "Switch Aktüatör 12 Kanal", category: "actuator", channel_type: "switch", channels: 12, din_width: 12, color: "#16a34a" },
+  { id: "relay-24", name: "Switch Aktüatör 24 Kanal", category: "actuator", channel_type: "switch", channels: 24, din_width: 12, color: "#16a34a" },
+  { id: "dimmer-4", name: "Dimmer Aktüatör 4 Kanal", category: "actuator", channel_type: "dimmer", channels: 4, din_width: 4, color: "#f97316" },
+  { id: "dimmer-8", name: "Dimmer Aktüatör 8 Kanal", category: "actuator", channel_type: "dimmer", channels: 8, din_width: 6, color: "#f97316" },
+  { id: "blind-4", name: "Jalüzi/Perde Aktüatörü 4 Kanal", category: "actuator", channel_type: "blind", channels: 4, din_width: 4, color: "#0f766e" },
+  { id: "blind-8", name: "Jalüzi/Perde Aktüatörü 8 Kanal", category: "actuator", channel_type: "blind", channels: 8, din_width: 6, color: "#0f766e" },
+  { id: "binary-4", name: "Binary Input 4 Kanal", category: "input", channel_type: "input", channels: 4, din_width: 2, color: "#64748b" },
+  { id: "binary-8", name: "Binary Input 8 Kanal", category: "input", channel_type: "input", channels: 8, din_width: 4, color: "#64748b" }
+];

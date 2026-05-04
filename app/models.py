@@ -1,7 +1,7 @@
-from datetime import datetime, timedelta
+from app import db, login_manager
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-from app import db, login_manager
+from datetime import datetime, timedelta
 
 
 class User(UserMixin, db.Model):
@@ -10,7 +10,7 @@ class User(UserMixin, db.Model):
     password = db.Column(db.String(255), nullable=False)
     plan = db.Column(db.String(50), default="trial")
     trial_start = db.Column(db.DateTime, default=datetime.utcnow)
-    projects = db.relationship("Project", backref="user", lazy=True, cascade="all, delete-orphan")
+    projects = db.relationship("Project", backref="user", lazy=True)
 
     def set_password(self, password):
         self.password = generate_password_hash(password, method="pbkdf2:sha256")
@@ -66,12 +66,13 @@ class Project(db.Model):
 def seed_products():
     if Product.query.filter_by(is_default=True).first():
         return
+
     defaults = [
         Product(name="KNX Power Supply 640mA", category="power_supply", channels=1, channel_type="power", din_width=4, is_default=True),
         Product(name="KNX IP Interface", category="interface", channels=1, channel_type="interface", din_width=2, is_default=True),
         Product(name="KNX IP Router", category="router", channels=1, channel_type="router", din_width=2, is_default=True),
-        Product(name="Switch Aktüatör 6 Kanal", category="actuator", channels=6, channel_type="switch", din_width=4, is_default=True),
-        Product(name="Switch Aktüatör 12 Kanal", category="actuator", channels=12, channel_type="switch", din_width=8, is_default=True),
+        Product(name="Switch Aktüatör 8 Kanal", category="actuator", channels=8, channel_type="switch", din_width=8, is_default=True),
+        Product(name="Switch Aktüatör 12 Kanal", category="actuator", channels=12, channel_type="switch", din_width=12, is_default=True),
         Product(name="Switch Aktüatör 24 Kanal", category="actuator", channels=24, channel_type="switch", din_width=12, is_default=True),
         Product(name="Dimmer Aktüatör 4 Kanal", category="actuator", channels=4, channel_type="dimmer", din_width=4, is_default=True),
         Product(name="Dimmer Aktüatör 8 Kanal", category="actuator", channels=8, channel_type="dimmer", din_width=6, is_default=True),
@@ -79,11 +80,7 @@ def seed_products():
         Product(name="Jalüzi/Perde Aktüatörü 8 Kanal", category="actuator", channels=8, channel_type="blind", din_width=6, is_default=True),
         Product(name="Binary Input 4 Kanal", category="input", channels=4, channel_type="input", din_width=2, is_default=True),
         Product(name="Binary Input 8 Kanal", category="input", channels=8, channel_type="input", din_width=4, is_default=True),
-        Product(name="1 Gang KNX Anahtar", category="field_knx", channels=1, channel_type="push", din_width=0, is_default=True),
-        Product(name="2 Gang KNX Anahtar", category="field_knx", channels=2, channel_type="push", din_width=0, is_default=True),
-        Product(name="4 Gang KNX Anahtar", category="field_knx", channels=4, channel_type="push", din_width=0, is_default=True),
-        Product(name="Termostat", category="field_knx", channels=1, channel_type="thermostat", din_width=0, is_default=True),
     ]
-    for product in defaults:
-        db.session.add(product)
+    for p in defaults:
+        db.session.add(p)
     db.session.commit()

@@ -1,9 +1,7 @@
-import { createPanel } from "./panel.js";
-import { drawPanel } from "./canvas.js";
+import { createInitialState } from "./state.js";
 import { initUI } from "./ui.js";
 
-const canvas = document.getElementById("panelCanvas");
-const panel = createPanel();
+const state = createInitialState();
+const canvas = document.getElementById("mainCanvas");
 
-drawPanel(canvas, panel);
-initUI(panel, canvas);
+initUI(state, canvas);
