@@ -1,19 +1,28 @@
-{% extends "base.html" %}
-{% block title %}Proje{% endblock %}
+{% extends "base.html" %}{% block title %}Proje{% endblock %}
 {% block content %}
-<div class="app-shell">
-  <aside class="sidebar">
-    <div class="brand"><div class="brand-mark">KNX</div><div><h1>KNXdoit v13</h1><p>Panel + kurallar + çıktı</p></div></div>
-    <div class="project-fields"><input id="projectName" value="KNXdoit Projesi"><select id="etsVersion"><option>ETS6</option><option>ETS5</option></select></div>
-    <section class="menu-section"><button class="menu-title" data-toggle="knxProducts">▸ KNX Sistem</button><div id="knxProducts" class="menu-list hidden"></div></section>
-    <section class="menu-section"><button class="menu-title" data-toggle="actuators">▸ Aktüatörler</button><div id="actuators" class="menu-list hidden"></div></section>
-    <section class="menu-section"><button class="menu-title" data-toggle="loads">▸ Saha Yükleri</button><div id="loads" class="menu-list hidden"></div></section>
-    <section class="menu-section"><button class="menu-title" data-toggle="fieldDevices">▸ KNX Saha Cihazları</button><div id="fieldDevices" class="menu-list hidden"></div></section>
-    <section class="actions"><button id="clearPanel" class="secondary-btn">Pano Temizle</button><button id="saveProject" class="secondary-btn">Projeyi Kaydet</button><button id="downloadPdf" class="primary-btn">PDF Çıktı</button><button id="downloadKnx" class="primary-btn alt">.knxproj</button></section>
-    <section class="status-box"><h3>Durum</h3><div id="statusText">Sistem hazır.</div></section>
+<div class="project-app">
+  <aside class="left-panel">
+    <section><h3>PROJE</h3><label class="field-label">Proje Adı<input id="projectName" value="KNXdoit Projesi"></label></section>
+    <section><h3>KAT / ODA</h3><button id="addFloor" class="soft">+ Kat Ekle</button><div id="floorTabs" class="tabs"></div><div class="two"><button id="addRoom" class="soft">+ Oda Ekle</button><button id="addCollector" class="soft">+ Kollektör</button></div></section>
+    <section><h3>ODAYA CİHAZ EKLE</h3><select id="roomSelect"></select><div id="roomDevices" class="device-list"></div></section>
+    <section><h3>PANO ÜRÜNLERİ</h3><div id="panelProducts" class="device-list"></div></section>
+    <section class="actions"><button id="clearBtn" class="soft">Pano Temizle</button><button id="saveBtn" class="soft">Projeyi Kaydet</button><button id="pdfBtn" class="blue">PDF Çıktı</button><button id="knxBtn" class="green">.knxproj</button></section>
+    <section class="status-box"><h2>Durum</h2><div id="status">Sistem hazır.</div><div id="ruleWarnings"></div></section>
   </aside>
-  <main class="workspace"><header class="topbar"><div><h2>Gerçek Pano Görünümü</h2><p>Ürün ekle, yük bağla, grup adreslerini otomatik üret.</p></div><div class="summary"><span>Ürün: <b id="deviceCount">0</b></span><span>GA: <b id="gaCount">0</b></span></div></header><div class="canvas-wrap"><canvas id="panelCanvas"></canvas></div></main>
-  <aside class="rightbar"><h3>Grup Adresleri</h3><div id="gaList" class="ga-list">Henüz grup adresi yok.</div></aside>
+  <main class="center-panel">
+    <header class="project-toolbar">
+      <div class="toolbar-title"><h1>KNXdoit v17</h1><p>Kat, oda, kollektör, pano ve KNX çıktısı.</p></div>
+      <div class="stats"><div><b id="roomCount">0</b><span>Oda</span></div><div><b id="productCount">0</b><span>Ürün</span></div><div><b id="gaCount">0</b><span>GA</span></div></div>
+      <div class="zoom-box"><button id="zoomOut">-</button><input id="zoomRange" type="range" min="50" max="150" value="100"><button id="zoomIn">+</button><button id="zoomReset">100%</button></div>
+      <select id="etsVersion"><option>ETS6</option><option>ETS5</option></select>
+    </header>
+    <div class="workspace-scroll"><div id="zoomContent" class="zoom-content"><div class="drawing-sheet">
+      <div class="sheet-title">Kat Planı + Gerçek Pano Görünümü</div>
+      <div class="sheet-grid"><div><h4 id="floorTitle">Zemin Kat Odaları</h4><div id="roomsCanvas" class="rooms-canvas"></div><h4>Kollektörler</h4><div id="collectorsCanvas" class="collectors-canvas"></div></div><div><h4 id="panelTitle">Zemin Kat KNX Panosu</h4><canvas id="panelCanvas" width="980" height="720"></canvas></div></div>
+    </div></div></div>
+  </main>
+  <aside class="right-panel"><h1>Grup Adresleri</h1><div id="gaList"></div></aside>
 </div>
+<div id="modal" class="modal hidden"><div class="modal-card"><h2 id="modalTitle">Başlık</h2><div id="modalBody"></div><div class="modal-actions"><button id="modalCancel" class="soft">İptal</button><button id="modalOk" class="blue">Tamam</button></div></div></div>
 <script type="module" src="/static/app.js"></script>
 {% endblock %}

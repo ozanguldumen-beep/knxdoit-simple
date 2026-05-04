@@ -1,9 +1,4 @@
-export const PANEL_CONFIG = { width: 1100, height: 1120, padding: 70, headerSafeTop: 165, railSlots: 48, moduleUnit: 18, railHeight: 28, railGap: 150, deviceHeight: 86, fieldTopOffset: 90 };
-export function createPanel(rowCount = 5) { const rails = []; for (let i=0;i<rowCount;i++) rails.push({id:`rail-${i+1}`, name:`${i+1}. DIN Ray`, x:PANEL_CONFIG.padding, y:PANEL_CONFIG.headerSafeTop+i*PANEL_CONFIG.railGap, width:PANEL_CONFIG.railSlots*PANEL_CONFIG.moduleUnit, height:PANEL_CONFIG.railHeight, slots:PANEL_CONFIG.railSlots, modules:[]}); return {id:'main-panel', name:'KNX Pano', width:PANEL_CONFIG.width, height:PANEL_CONFIG.height, rails, fieldDevices:[]}; }
-export function getRailUsedSlots(rail){ return rail.modules.reduce((t,d)=>t+(d.moduleWidth||2),0); }
-export function canPlaceDeviceOnRail(rail, device){ return getRailUsedSlots(rail)+(device.moduleWidth||2) <= rail.slots; }
-export function findFirstAvailableRail(panel, device){ return panel.rails.find(r=>canPlaceDeviceOnRail(r, device)) || null; }
-export function autoPlaceDevice(panel, device){ const rail=findFirstAvailableRail(panel,device); if(!rail) throw new Error('Panoda yeterli boş DIN ray alanı yok.'); const startSlot=getRailUsedSlots(rail); const placed={...device, instanceId:`${device.id||device.type}-${Date.now()}-${Math.floor(Math.random()*10000)}`, railId:rail.id, startSlot, slot:startSlot, moduleWidth:device.moduleWidth||2, connections:[]}; rail.modules.push(placed); return placed; }
-export function addFieldDevice(panel, device){ const placed={...device, instanceId:`${device.id||device.type}-${Date.now()}-${Math.floor(Math.random()*10000)}`}; panel.fieldDevices.push(placed); return placed; }
-export function clearPanel(panel){ panel.rails.forEach(r=>r.modules=[]); panel.fieldDevices=[]; return panel; }
-export function getAllPanelDevices(panel){ return panel.rails.flatMap(r=>r.modules); }
+export function createInitialState(){
+  return { zoom:100, currentFloor:0, floors:[{ name:"Zemin Kat", rooms:[], collectors:[], panelProducts:[] }] };
+}
+export function currentFloor(state){ return state.floors[state.currentFloor]; }

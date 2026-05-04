@@ -1,5 +1,2 @@
-{% extends "base.html" %}
-{% block title %}Kayıt{% endblock %}
-{% block content %}
-<div class="auth-wrap"><div class="auth-card"><h2>7 Gün Ücretsiz Dene</h2><p>3 proje limiti ile tüm özellikler.</p><form method="POST"><label>Email</label><input type="email" name="email" required><label>Şifre</label><input type="password" name="password" required minlength="6"><button>Hesap Oluştur</button></form><p>Zaten hesabın var mı? <a href="/login">Giriş yap</a></p></div></div>
-{% endblock %}
+{% extends "base.html" %}{% block title %}Kayıt{% endblock %}
+{% block content %}<div class="auth"><form method="post" class="card"><h2>7 Gün Ücretsiz Dene</h2><label>Email<input name="email" type="email" required></label><label>Şifre<input name="password" type="password" minlength="6" required></label><button>Hesap Oluştur</button><a href="/login">Zaten hesabın var mı?</a></form></div>{% endblock %}

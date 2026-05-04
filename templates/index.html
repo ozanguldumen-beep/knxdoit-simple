@@ -1,20 +1,2 @@
-{% extends "base.html" %}
-{% block title %}Kolay KNX Planlama{% endblock %}
-{% block content %}
-<main class="landing">
-  <section class="hero-card">
-    <div class="badge">ETS bilgisine gerek yok</div>
-    <h1>KNX Projesini Dakikalar İçinde Hazırla</h1>
-    <p>Ürünleri ekle, pano yerleşimini gör, saha yüklerini bağla. Grup adresi, PDF ve .knxproj çıktısı otomatik oluşsun.</p>
-    <div class="hero-actions">
-      <a class="primary-link" href="/register">7 Gün Ücretsiz Dene</a>
-      <a class="secondary-link" href="/login">Giriş Yap</a>
-    </div>
-  </section>
-  <section class="feature-grid">
-    <div class="feature"><strong>Gerçek Pano</strong><span>DIN ray yerleşimi ve modül genişliği.</span></div>
-    <div class="feature"><strong>KNX Kuralları</strong><span>Röle, dimmer ve perde bağlantı kontrolü.</span></div>
-    <div class="feature"><strong>Çıktılar</strong><span>PDF, grup adresleri ve .knxproj.</span></div>
-  </section>
-</main>
-{% endblock %}
+{% extends "base.html" %}{% block title %}Ana Sayfa{% endblock %}
+{% block content %}<main class="landing"><div class="pill">Bayiler için KNX proje sihirbazı</div><h1>Kat, oda, pano, kollektör ve KNX çıktısı tek ekranda.</h1><p>Odayı oluştur, cihazları ekle, pano yerleşimini gör, PDF ve .knxproj dosyasını indir.</p><a class="primary" href="/register">7 Gün Ücretsiz Dene</a></main>{% endblock %}

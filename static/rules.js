@@ -1,8 +1,16 @@
-export const DEVICE_RULES = { actuator:{label:'Röle Aktüatör',allowedLoads:['light_load']}, dimmer:{label:'Dimmer Aktüatör',allowedLoads:['dim_light']}, curtain_actuator:{label:'Perde Aktüatörü',allowedLoads:['curtain_motor']} };
-export function isPanelDevice(device){ return ['power_supply','interface','router','actuator','dimmer','curtain_actuator','binary_input'].includes(device.type); }
-export function isLoadDevice(device){ return ['light_load','dim_light','curtain_motor'].includes(device.type); }
-export function isFieldDevice(device){ return ['knx_switch','thermostat'].includes(device.type); }
-export function getMaxChannels(device){ return Number(device?.channels || (device?.type==='actuator'?8:device?.type==='dimmer'?4:device?.type==='curtain_actuator'?4:0)); }
-export function getUsedChannels(device){ return device?.connections?.length || 0; }
-export function canConnectDevice(sourceDevice,targetDevice){ if(!sourceDevice||!targetDevice) return {ok:false,message:'Kaynak veya hedef cihaz eksik.'}; const rule=DEVICE_RULES[sourceDevice.type]; if(!rule) return {ok:false,message:`${sourceDevice.name} bağlantı için uygun bir aktüatör değil.`}; if(!rule.allowedLoads.includes(targetDevice.type)) return {ok:false,message:`${targetDevice.name}, ${rule.label} ile bağlanamaz.`}; if(getUsedChannels(sourceDevice)>=getMaxChannels(sourceDevice)) return {ok:false,message:`${sourceDevice.name} üzerinde boş kanal kalmadı.`}; return {ok:true,message:`${targetDevice.name}, ${sourceDevice.name} cihazına bağlanabilir.`}; }
-export function connectDevice(sourceDevice,targetDevice){ const v=canConnectDevice(sourceDevice,targetDevice); if(!v.ok) return v; if(!sourceDevice.connections) sourceDevice.connections=[]; const channelNo=sourceDevice.connections.length+1; const connection={id:`conn-${Date.now()}-${Math.floor(Math.random()*9999)}`,sourceId:sourceDevice.instanceId||sourceDevice.id,sourceName:sourceDevice.name,targetId:`${targetDevice.id||targetDevice.type}-${Date.now()}-${Math.floor(Math.random()*9999)}`,targetName:targetDevice.name,targetType:targetDevice.type,channel:channelNo}; sourceDevice.connections.push(connection); return {ok:true,message:`${targetDevice.name}, ${sourceDevice.name} Kanal ${channelNo} üzerine bağlandı.`,connection}; }
+export function validateProject(state){
+  const warnings = [];
+  state.floors.forEach((floor)=>{
+    if(!floor.panelProducts.some(p=>p.category==="power_supply")) warnings.push(`${floor.name}: Power Supply yok.`);
+    const knxCount = floor.rooms.flatMap(r=>r.devices).filter(d=>!d.energy).reduce((a,d)=>a+d.count,0);
+    if(knxCount > 64) warnings.push(`${floor.name}: KNX hattında 64 cihaz sınırı aşıldı.`);
+  });
+  return warnings;
+}
+
+export function connectionTargetFor(deviceType){
+  if(deviceType==="dim") return "dimmer";
+  if(deviceType==="curtain") return "curtain_actuator";
+  if(deviceType==="light" || deviceType==="valve") return "relay";
+  return null;
+}

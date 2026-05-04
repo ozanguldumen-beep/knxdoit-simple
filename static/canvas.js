@@ -1,23 +1,54 @@
-import { PANEL_CONFIG } from './panel.js';
-const DPR = window.devicePixelRatio || 1;
-export function drawPanel(canvas,panel){ if(!canvas||!panel)return; const ctx=setupCanvas(canvas,panel.width,panel.height); drawWorkspace(ctx,panel); drawPanelBox(ctx,panel); drawRails(ctx,panel); drawDevices(ctx,panel); drawBusCable(ctx,panel); drawFieldLoads(ctx,panel); drawLoadCables(ctx,panel); }
-function setupCanvas(canvas,w,h){ canvas.width=w*DPR; canvas.height=h*DPR; canvas.style.width=`${w}px`; canvas.style.height=`${h}px`; const ctx=canvas.getContext('2d'); ctx.setTransform(DPR,0,0,DPR,0,0); ctx.clearRect(0,0,w,h); return ctx; }
-function drawWorkspace(ctx,p){ ctx.fillStyle='#f8fafc'; ctx.fillRect(0,0,p.width,p.height); }
-function drawPanelBox(ctx,p){ roundRect(ctx,25,25,p.width-50,p.height-50,22,'#fff','#94a3b8',2); ctx.fillStyle='#0f172a'; ctx.font='700 30px Arial'; ctx.fillText('KNX Pano',70,78); ctx.fillStyle='#64748b'; ctx.font='16px Arial'; ctx.fillText('DIN ray + saha yükleri + KNX bus',70,108); }
-function drawRails(ctx,p){ p.rails.forEach(r=>{ roundRect(ctx,r.x-10,r.y-8,r.width+20,r.height+16,7,'#dbeafe','#dbeafe',1); roundRect(ctx,r.x,r.y,r.width,r.height,4,'#94a3b8','#64748b',1); ctx.strokeStyle='#64748b'; ctx.lineWidth=1; for(let i=0;i<=r.slots;i++){ const x=r.x+i*PANEL_CONFIG.moduleUnit; ctx.beginPath(); ctx.moveTo(x,r.y+3); ctx.lineTo(x,r.y+r.height-3); ctx.stroke(); } ctx.fillStyle='#334155'; ctx.font='700 15px Arial'; ctx.fillText(r.name,r.x,r.y+r.height+30); }); }
-function drawDevices(ctx,p){ p.rails.forEach(r=>r.modules.forEach(d=>drawDevice(ctx,d,r))); }
-function getDeviceDrawBox(d,r){ const w=(d.moduleWidth||2)*PANEL_CONFIG.moduleUnit-4,h=PANEL_CONFIG.deviceHeight,slot=d.startSlot??d.slot??0,x=r.x+slot*PANEL_CONFIG.moduleUnit+2,y=r.y-Math.round((h-r.height)/2); return {x,y,w,h}; }
-function drawDevice(ctx,d,r){ const b=getDeviceDrawBox(d,r); roundRect(ctx,b.x,b.y,b.w,b.h,7,d.color||'#2563eb','#1e293b',2); ctx.fillStyle='rgba(255,255,255,.14)'; ctx.fillRect(b.x+4,b.y+5,Math.max(0,b.w-8),22); ctx.fillStyle='#fff'; ctx.font='700 12px Arial'; wrapText(ctx,d.name,b.x+8,b.y+19,b.w-16,13,2); ctx.font='700 11px Arial'; ctx.fillText(`${d.moduleWidth||2}M`,b.x+8,b.y+b.h-9); drawTerminals(ctx,b.x,b.y,b.w,b.h,d); }
-function drawTerminals(ctx,x,y,w,h,d){ const count=Math.min(12,Math.max(2,d.channels||d.moduleWidth||2)),gap=w/(count+1); ctx.fillStyle='#fff'; for(let i=1;i<=count;i++){ ctx.beginPath(); ctx.arc(x+gap*i,y+h-30,2.8,0,Math.PI*2); ctx.fill(); } }
-function busDevices(panel){ const arr=[]; panel.rails.forEach(r=>r.modules.forEach(d=>{ if(['power_supply','interface','router','actuator','dimmer','curtain_actuator','binary_input'].includes(d.type)) arr.push({device:d,rail:r}); })); return arr; }
-function drawBusCable(ctx,p){ const b=busDevices(p); if(b.length<2)return; ctx.strokeStyle='#dc2626'; ctx.lineWidth=2; ctx.setLineDash([6,5]); ctx.beginPath(); b.forEach((it,i)=>{ const bx=getDeviceDrawBox(it.device,it.rail),cx=bx.x+bx.w/2,cy=bx.y+bx.h+12; if(i===0)ctx.moveTo(cx,cy); else ctx.lineTo(cx,cy); }); ctx.stroke(); ctx.setLineDash([]); }
-function allConnections(p){ const list=[]; p.rails.forEach(r=>r.modules.forEach(d=>(d.connections||[]).forEach((c,i)=>list.push({actuator:d,rail:r,connection:c,index:i})))); return list; }
-function fieldBaseY(p){ return p.rails[p.rails.length-1].y+95; }
-function loadPosition(p,i){ const startX=90,startY=fieldBaseY(p)+45,gapX=138,gapY=82,perRow=7,col=i%perRow,row=Math.floor(i/perRow); return {x:startX+col*gapX,y:startY+row*gapY}; }
-function drawFieldLoads(ctx,p){ const y=fieldBaseY(p); ctx.strokeStyle='#cbd5e1'; ctx.lineWidth=1; ctx.setLineDash([8,6]); ctx.beginPath(); ctx.moveTo(55,y); ctx.lineTo(p.width-55,y); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle='#475569'; ctx.font='700 15px Arial'; ctx.fillText('Saha Yükleri / Bağlanan Cihazlar',70,y-15); allConnections(p).forEach((item,i)=>{ const pos=loadPosition(p,i); drawLoadIcon(ctx,pos.x,pos.y,item.connection,i); }); (p.fieldDevices||[]).forEach((fd,i)=>{ const x=90+i*120,y=fieldBaseY(p)-58; drawSmallField(ctx,x,y,fd); }); }
-function drawSmallField(ctx,x,y,d){ roundRect(ctx,x,y,96,42,10,'#eff6ff','#93c5fd',1.2); ctx.fillStyle=d.color||'#3b82f6'; ctx.font='700 18px Arial'; ctx.fillText(d.type==='thermostat'?'🌡':'🔘',x+12,y+27); ctx.fillStyle='#0f172a'; ctx.font='700 10px Arial'; wrapText(ctx,d.name,x+38,y+18,52,11,2); }
-function drawLoadIcon(ctx,x,y,c,i){ roundRect(ctx,x,y,96,56,12,'#fff','#94a3b8',1.5); ctx.fillStyle=getLoadColor(c.targetType); ctx.beginPath(); ctx.arc(x+24,y+26,14,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#fff'; ctx.font='700 16px Arial'; ctx.textAlign='center'; ctx.fillText(getLoadSymbol(c.targetType),x+24,y+31); ctx.textAlign='left'; ctx.fillStyle='#0f172a'; ctx.font='700 10px Arial'; wrapText(ctx,c.targetName||'Yük',x+44,y+20,45,11,2); ctx.fillStyle='#64748b'; ctx.font='10px Arial'; ctx.fillText(`K${c.channel||i+1}`,x+44,y+48); }
-function getLoadColor(t){ if(t==='dim_light')return'#9333ea'; if(t==='curtain_motor')return'#0ea5e9'; return'#f59e0b'; } function getLoadSymbol(t){ if(t==='dim_light')return'D'; if(t==='curtain_motor')return'M'; return'L'; }
-function drawLoadCables(ctx,p){ allConnections(p).forEach((it,i)=>{ const db=getDeviceDrawBox(it.actuator,it.rail),lp=loadPosition(p,i),fx=db.x+db.w/2,fy=db.y+db.h+5,tx=lp.x+48,ty=lp.y,midY=Math.max(fy+35,ty-35); ctx.strokeStyle='#111827'; ctx.lineWidth=2; ctx.setLineDash([]); ctx.beginPath(); ctx.moveTo(fx,fy); ctx.lineTo(fx,midY); ctx.lineTo(tx,midY); ctx.lineTo(tx,ty); ctx.stroke(); ctx.fillStyle='#111827'; ctx.font='10px Arial'; ctx.fillText(`CH${it.connection.channel}`,tx+6,ty-6); }); }
-function roundRect(ctx,x,y,w,h,r,fill,stroke,lw=1){ const rr=Math.min(r,w/2,h/2); ctx.beginPath(); ctx.moveTo(x+rr,y); ctx.lineTo(x+w-rr,y); ctx.quadraticCurveTo(x+w,y,x+w,y+rr); ctx.lineTo(x+w,y+h-rr); ctx.quadraticCurveTo(x+w,y+h,x+w-rr,y+h); ctx.lineTo(x+rr,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-rr); ctx.lineTo(x,y+rr); ctx.quadraticCurveTo(x,y,x+rr,y); ctx.closePath(); if(fill){ctx.fillStyle=fill;ctx.fill();} if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lw;ctx.stroke();} }
-function wrapText(ctx,text,x,y,maxWidth,lineHeight,maxLines=2){ const words=String(text||'').split(' '); let line='',lines=0; for(let n=0;n<words.length;n++){ const test=line+words[n]+' '; if(ctx.measureText(test).width>maxWidth&&n>0){ ctx.fillText(line.trim(),x,y); line=words[n]+' '; y+=lineHeight; lines++; if(lines>=maxLines-1)break; }else line=test; } ctx.fillText(line.trim(),x,y); }
+const U = 18;
+export function drawPanel(canvas, floor){
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle="#fff"; ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.strokeStyle="#94a3b8"; ctx.lineWidth=2; round(ctx,18,18,944,682,18); ctx.stroke();
+  ctx.fillStyle="#0f172a"; ctx.font="700 18px Arial"; ctx.fillText(`${floor.name} KNX Panosu`,40,52);
+  const rails = [90,230,370,510,650];
+  rails.forEach((y,i)=>drawRail(ctx,60,y,860,i+1));
+  placeProducts(ctx, floor, rails);
+  drawBus(ctx, floor, rails);
+  drawFieldSummary(ctx, floor);
+}
+function drawRail(ctx,x,y,w,n){
+  ctx.fillStyle="#dbeafe"; round(ctx,x-10,y-12,w+20,44,8); ctx.fill();
+  ctx.fillStyle="#94a3b8"; round(ctx,x,y,w,28,4); ctx.fill(); ctx.strokeStyle="#64748b"; ctx.lineWidth=1;
+  for(let i=0;i<=48;i++){ const sx=x+i*18; ctx.beginPath(); ctx.moveTo(sx,y+3); ctx.lineTo(sx,y+25); ctx.stroke(); }
+  ctx.fillStyle="#334155"; ctx.font="700 15px Arial"; ctx.fillText(`${n}. DIN Ray`,x,y+58);
+}
+function placeProducts(ctx,floor,rails){
+  let rail=0, slot=0;
+  floor.panelProducts.forEach(p=>{
+    if(slot + p.moduleWidth > 48){ rail++; slot=0; }
+    if(rail>=rails.length) return;
+    const x=62+slot*U, y=rails[rail]-42, w=p.moduleWidth*U-3, h=72;
+    ctx.fillStyle=p.color||"#2563eb"; round(ctx,x,y,w,h,7); ctx.fill();
+    ctx.strokeStyle="#1e293b"; ctx.lineWidth=1; ctx.stroke();
+    ctx.fillStyle="#fff"; ctx.font="700 9px Arial"; wrap(ctx,p.name,x+6,y+16,w-12,10,3);
+    ctx.font="700 8px Arial"; ctx.fillText(`${p.moduleWidth}M · ${p.channels}K`,x+6,y+h-8);
+    slot += p.moduleWidth;
+  });
+}
+function drawBus(ctx,floor,rails){
+  if(floor.panelProducts.length<2) return;
+  ctx.strokeStyle="#dc2626"; ctx.lineWidth=1.5; ctx.setLineDash([5,4]);
+  ctx.beginPath(); ctx.moveTo(80, rails[0]+45); ctx.lineTo(760, rails[0]+45); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle="#dc2626"; ctx.font="700 10px Arial"; ctx.fillText("KNX BUS",80,rails[0]+62);
+}
+function drawFieldSummary(ctx,floor){
+  const loads = floor.rooms.flatMap(r=>r.devices.map(d=>({...d,room:r.name})));
+  ctx.strokeStyle="#cbd5e1"; ctx.setLineDash([8,6]); ctx.beginPath(); ctx.moveTo(60,610); ctx.lineTo(920,610); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle="#475569"; ctx.font="700 13px Arial"; ctx.fillText("Saha Yükleri / Oda Cihazları Özeti",70,598);
+  let x=70,y=630;
+  loads.slice(0,30).forEach(d=>{
+    ctx.fillStyle="#fff"; round(ctx,x,y,92,42,10); ctx.fill(); ctx.strokeStyle="#94a3b8"; ctx.stroke();
+    ctx.fillStyle=color(d.type); ctx.beginPath(); ctx.arc(x+20,y+20,13,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#fff"; ctx.font="700 12px Arial"; ctx.textAlign="center"; ctx.fillText((d.icon||d.label[0]).slice(0,1),x+20,y+24); ctx.textAlign="left";
+    ctx.fillStyle="#0f172a"; ctx.font="700 9px Arial"; wrap(ctx,d.label,x+40,y+16,45,10,2);
+    x+=102; if(x>850){x=70;y+=50;}
+  });
+}
+function color(t){return t==="dim"?"#9333ea":t==="curtain"?"#0ea5e9":t==="thermostat"?"#ef4444":t==="valve"?"#0f766e":t==="switch"?"#475569":"#f59e0b";}
+function round(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);}
+function wrap(ctx,text,x,y,maxWidth,lineHeight,maxLines){const words=String(text).split(" ");let line="",lines=0;for(const word of words){const test=line+word+" ";if(ctx.measureText(test).width>maxWidth&&line){ctx.fillText(line.trim(),x,y);line=word+" ";y+=lineHeight;lines++;if(lines>=maxLines-1)break;}else line=test;}ctx.fillText(line.trim(),x,y);}

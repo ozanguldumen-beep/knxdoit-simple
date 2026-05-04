@@ -1,6 +1,9 @@
-export function collectProjectData(panel){ const devices=[]; panel.rails.forEach(rail=>rail.modules.forEach(device=>devices.push({name:device.name,type:device.type,moduleWidth:device.moduleWidth,channels:device.channels||1,connections:device.connections||[]}))); return {projectName:document.getElementById('projectName')?.value||'KNXdoit Projesi', etsVersion:document.getElementById('etsVersion')?.value||'ETS6', devices, fieldDevices:panel.fieldDevices||[]}; }
-async function downloadFromEndpoint(endpoint, filename, panel){ const data=collectProjectData(panel); const res=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}); if(!res.ok) throw new Error('Çıktı oluşturulamadı.'); const blob=await res.blob(); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=filename(data); document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
-export async function downloadPdf(panel){ return downloadFromEndpoint('/api/pdf', d=>`${d.projectName}_pano_raporu.pdf`, panel); }
-export async function downloadKnxproj(panel){ return downloadFromEndpoint('/api/knxproj', d=>`${d.projectName}.knxproj`, panel); }
-export async function saveProject(panel){ const data=collectProjectData(panel); const res=await fetch('/api/save-project',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}); if(!res.ok) throw new Error('Proje kaydedilemedi.'); return res.json(); }
-export async function loadGroupAddresses(panel){ const data=collectProjectData(panel); const res=await fetch('/api/group-addresses',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}); if(!res.ok) return []; const json=await res.json(); return json.addresses||[]; }
+export async function downloadFile(endpoint, payload, filename){
+  const res = await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+  if(!res.ok) throw new Error("Dosya oluşturulamadı");
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
